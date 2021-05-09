@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using System.IO;
 namespace Event_Creator
 {
     public class Program
@@ -20,7 +20,11 @@ namespace Event_Creator
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.UseKestrel();
+                    webBuilder.UseContentRoot(Directory.GetCurrentDirectory());
+                    webBuilder.UseUrls("http://localhost:5000;http://*:5000");
                     webBuilder.UseStartup<Startup>();
                 });
     }
 }
+

@@ -9,8 +9,8 @@ namespace Event_Creator.models
 {
     public class ApplicationContext : DbContext
     {
-        public ApplicationContext(DbContextOptions options) 
-            :base(options)
+        public ApplicationContext(DbContextOptions options)
+            : base(options)
         {
         }
 
