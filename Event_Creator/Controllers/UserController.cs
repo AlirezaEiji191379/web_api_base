@@ -73,7 +73,6 @@ namespace Event_Creator.Controllers
         public async Task<ActionResult> ValidUniqueParamsInRequest(string check,string value)
         {
             Task<string> checkDuplicate = Task.Run(()=> {
-                
 
                 if (check.Equals("Email"))
                 {
