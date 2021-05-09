@@ -74,6 +74,7 @@ namespace Event_Creator.Controllers
         {
             Task<string> checkDuplicate = Task.Run(()=> {
                 
+
                 if (check.Equals("Email"))
                 {
                     if (_appContext.Users.Single(x => x.Email==value)!=null) { return "این پست الکترونیکی قبلا ثبت شده است"; }
