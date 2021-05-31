@@ -36,6 +36,11 @@ namespace Event_Creator.Controllers
                 return BadRequest(Errors.NullVerification);
             }
 
+            if (verification.usage != Usage.SignUp)
+            {
+                return BadRequest(Errors.falseVerificationType);
+            }
+
             if (verification.Requested == 5)
             {
                 await Task.Run(() => {
@@ -81,11 +86,29 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.NullVerification);
             }
+
+            if (verification.Resended == true)
+            {
+                await Task.Run(() => {
+                    User user = _appContext.Users.Single(a => a.Username == username);
+                    _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
+                    _appContext.SaveChanges();
+                });
+                return BadRequest(Errors.exceedVerification);
+            }
+
+
+            if(verification.usage != Usage.SignUp)
+            {
+                return BadRequest(Errors.falseVerificationType);
+            }
+
             Random random = new Random();
             int code = random.Next(100000, 999999);
             await Task.Run(() => {
                 verification.VerificationCode = code;
                 verification.Requested = 0;
+                verification.Resended = true;
                 _appContext.verifications.Update(verification);
                 _appContext.SaveChanges();
             });

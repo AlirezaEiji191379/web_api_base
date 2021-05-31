@@ -56,7 +56,7 @@ namespace Event_Creator.Other.Services
             message.Subject = "کد تایید";
             message.Body = new TextPart("plain")
             {
-                Text = $"verification Code is {code}"
+                Text = $"verification Code is {code} and it is valid for 15 mins!"
             };
             using (var client = new SmtpClient())
             {

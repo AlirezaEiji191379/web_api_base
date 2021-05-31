@@ -4,14 +4,16 @@ using Event_Creator.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Event_Creator.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210531183930_Enum_Added_Role!")]
+    partial class Enum_Added_Role
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,18 +87,11 @@ namespace Event_Creator.Migrations
                     b.Property<int>("Requested")
                         .HasColumnType("int");
 
-                    b.Property<bool>("Resended")
-                        .HasColumnType("bit");
-
                     b.Property<long?>("UserId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("VerificationCode")
                         .HasColumnType("int");
-
-                    b.Property<string>("usage")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("VerificationId");
 

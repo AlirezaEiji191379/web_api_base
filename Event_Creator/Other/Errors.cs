@@ -37,6 +37,15 @@ namespace Event_Creator.Other
             get { return "کاربر گرامی لطفا مجددا اقدام به ثبت نام نمایید"; }
         }
 
+        public static string wrongAuth
+        {
+            get { return "نام کاربری یا رمز عبور اشتباه است."; }
+        }
+
+        public static string falseVerificationType
+        {
+            get { return "خطا در تایید کد"; }
+        }
 
     }
 }

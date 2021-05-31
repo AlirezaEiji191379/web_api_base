@@ -14,6 +14,7 @@ namespace Event_Creator.data
             builder.HasIndex(x => x.Username).IsUnique();
             builder.HasIndex(x => x.Email).IsUnique();
             builder.HasIndex(x => x.PhoneNumber).IsUnique();
+            builder.Property(x => x.role).HasConversion<string>();
         }
     }
 }

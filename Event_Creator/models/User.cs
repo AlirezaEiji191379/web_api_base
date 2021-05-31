@@ -34,6 +34,13 @@ namespace Event_Creator.models
         public string LastName { get; set; }
         public bool Enable { get; set; }
 
+        public Role role { get; set; }
 
     }
+    public enum Role
+    {
+        User,
+        Admin
+    }
+
 }

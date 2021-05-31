@@ -41,13 +41,15 @@ namespace Event_Creator.Controllers
                 return BadRequest(duplicationErrors);
             }
             user.Enable = false;
+            user.role = Role.User;
             await _appContext.Users.AddAsync(user);
             Random random = new Random();
             int code = random.Next(100000, 999999);
             await _userService.sendEmailToUser(user.Email , code);
             Verification verification = new Verification() {
                 User = user,
-                VerificationCode = code
+                VerificationCode = code,
+                usage=Usage.SignUp
             };
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
