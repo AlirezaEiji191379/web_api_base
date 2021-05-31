@@ -29,6 +29,8 @@ namespace Event_Creator.Controllers
             _userService = userService;
         }
         
+
+
         [Route("[action]")]
         [HttpPost]
         public async Task<IActionResult> SignUp([FromBody] User user)
@@ -40,20 +42,16 @@ namespace Event_Creator.Controllers
             }
             user.Enable = false;
             await _appContext.Users.AddAsync(user);
-            int code = await _userService.sendEmailToUser(user.Email);
+            Random random = new Random();
+            int code = random.Next(100000, 999999);
+            await _userService.sendEmailToUser(user.Email , code);
             Verification verification = new Verification() {
                 User = user,
                 VerificationCode = code
             };
             await _appContext.verifications.AddAsync(verification);
+            await _appContext.SaveChangesAsync();
             return Ok(Information.okSignUp);
-        }
-
-        [Route("[action]/{username}/{code}")]
-        public string Verify(string username , int code)
-        {
-
-            return username;
         }
 
 

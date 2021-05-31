@@ -37,7 +37,6 @@ namespace Event_Creator.Other.Services
            );
         }
 
-
         public Task sendSmsToUser(string phoneNumber)
         {
             var sender = "1000596446";
@@ -49,17 +48,15 @@ namespace Event_Creator.Other.Services
 
 
 
-        public async Task<int> sendEmailToUser(string email)
+        public async Task sendEmailToUser(string email , int code)
         {
-            Random random = new Random();
-            int code = random.Next(100000,999999);
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Event_Creator Team Support", "alirezaeiji191379@gmail.com"));
             message.To.Add(new MailboxAddress("Event_Creator Client", email));
             message.Subject = "کد تایید";
             message.Body = new TextPart("plain")
             {
-                Text = "کد تایی شما $code میباشد. این کد تایید حداکثر تا 15 دقیقه معبتر است."
+                Text = $"verification Code is {code}"
             };
             using (var client = new SmtpClient())
             {
@@ -68,15 +65,6 @@ namespace Event_Creator.Other.Services
                 await client.SendAsync(message);
                 client.Disconnect(true);
             }
-            return code;
-        }
-
-        public string generateRandomString()
-        {
-            var random = new Random();
-            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, 20)
-            .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
     }

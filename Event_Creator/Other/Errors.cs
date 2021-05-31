@@ -22,5 +22,21 @@ namespace Event_Creator.Other
             get { return "این نام کاربری قبلا ثبت شده است"; }
         }
 
+        public static string NullVerification
+        {
+            get { return "این نام کاربری در سیستم تایید وجود ندارد"; }
+        }
+
+        public static string failedVerification
+        {
+            get { return "کد تایید وارد شده نادرست است."; }
+        }
+
+        public static string exceedVerification
+        {
+            get { return "کاربر گرامی لطفا مجددا اقدام به ثبت نام نمایید"; }
+        }
+
+
     }
 }

@@ -9,6 +9,6 @@ namespace Event_Creator.Other.Interfaces
     public interface IUserService
     {
         Task<List<string>> checkUserDuplicate(User user);
-        Task<int> sendEmailToUser(string email);
+        Task sendEmailToUser(string email , int code);
     }
 }

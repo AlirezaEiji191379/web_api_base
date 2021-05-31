@@ -10,6 +10,7 @@ namespace Event_Creator.models
         public long VerificationId { get; set; }
         public User User { get; set; }
         public int VerificationCode { get; set; }
+        public int Requested { get; set; }
 
     }
 }
