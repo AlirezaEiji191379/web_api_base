@@ -16,13 +16,13 @@ namespace Event_Creator.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ApplicationContext _appContext;
-        private readonly JwtConfig _jwtConfig; 
+        private readonly IJwtService _jwtService;
         private readonly IUserService _userService;
 
-        public AuthController(ApplicationContext applicationContext, JwtConfig jwt , IUserService userService)
+        public AuthController(ApplicationContext applicationContext, IJwtService jwtService , IUserService userService)
         {
             _appContext = applicationContext;
-            _jwtConfig = jwt;
+            _jwtService = jwtService;
             _userService = userService;
         }
 
@@ -32,12 +32,17 @@ namespace Event_Creator.Controllers
         {
             User user =await Task.Run(() =>
             {
-                return _appContext.Users.SingleOrDefault(x => x.Username == loginRequest.Username);
+                return _appContext.Users.SingleOrDefault(x => x.Username.Equals(loginRequest.Username));
             }
             );
             if(user == null || user.Password.Equals(loginRequest.Password)==false)
             {
                 return NotFound(Errors.wrongAuth);
+            }
+
+            if (user.Enable == false)
+            {
+                return Forbid(Errors.notEnabledLogin);
             }
             Random random = new Random();
             int code = random.Next(100000, 999999);
@@ -72,11 +77,11 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.falseVerificationType);
             }
-
+            User user = null;
             if (verification.Requested == 5)
             {
                 await Task.Run(() => {
-                    User user = _appContext.Users.Single(a => a.Username == username);
+                    user = _appContext.Users.Single(a => a.Username == username);
                     //_appContext.Users.Remove(user); add to locked account
                     _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
                     _appContext.SaveChanges();
@@ -95,14 +100,24 @@ namespace Event_Creator.Controllers
             }
 
             await Task.Run(() => {
-                User user = _appContext.Users.Single(a => a.Username == username);
+                user = _appContext.Users.Single(a => a.Username == username);
                 _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
                 _appContext.SaveChanges();
             });
 
-            // get new Jwt token!
-            
-            return Ok(Information.okVerifySignUp);
+            string jwtId = Guid.NewGuid().ToString();
+            string jwtAccessToken = _jwtService.JwtTokenGenerator(user.UserId,jwtId);
+            RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId,user.UserId);
+            await _appContext.refreshTokens.AddAsync(refreshToken);
+            await _appContext.SaveChangesAsync();
+            AuthResponse response = new AuthResponse()
+            {
+                ErrorList = null,
+                success=true,
+                RefreshToken=refreshToken.Token,
+                JwtAccessToken=jwtAccessToken
+            };
+            return Ok(response);
         }
 
 
@@ -149,6 +164,13 @@ namespace Event_Creator.Controllers
         }
 
 
+
+
+        [Route("[action]")]
+        public string Test()
+        {
+            return _jwtService.JwtTokenGenerator(22,Guid.NewGuid().ToString());
+        } 
 
 
 

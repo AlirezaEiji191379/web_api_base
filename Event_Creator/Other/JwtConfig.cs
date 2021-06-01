@@ -7,7 +7,9 @@ namespace Event_Creator.Other
 {
     public class JwtConfig
     {
-        public string SecretKey { get; set; }
+        public string PrivateKey { get; set; }
+        public string PublicKey { get; set; }
         public string Issuer { get; set; }
+        public string Audience { get; set; }
     }
 }

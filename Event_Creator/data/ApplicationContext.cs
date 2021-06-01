@@ -21,6 +21,7 @@ namespace Event_Creator.models
 
         public DbSet<User> Users { get; set; }
         public DbSet<Verification> verifications { get; set; }
+        public DbSet<RefreshToken> refreshTokens { get; set; }
 
     }
 }

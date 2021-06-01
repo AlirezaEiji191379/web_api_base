@@ -47,5 +47,11 @@ namespace Event_Creator.Other
             get { return "خطا در تایید کد"; }
         }
 
+        public static string notEnabledLogin
+        {
+            get { return "کاربر گرامی لطفا اکانت خود را تایید نمایید"; }
+        }
+
+
     }
 }

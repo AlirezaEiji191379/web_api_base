@@ -21,6 +21,7 @@ using Event_Creator.Other;
 using Microsoft.AspNetCore.Identity;
 using Event_Creator.Other.Interfaces;
 using Event_Creator.Other.Services;
+using System.Security.Cryptography;
 
 namespace Event_Creator
 {
@@ -46,21 +47,25 @@ namespace Event_Creator
             .AddJwtBearer(jwt => {
                 jwt.RequireHttpsMetadata = false;
                 jwt.SaveToken = true;
+                using RSA rsa = RSA.Create();
+                rsa.ImportRSAPublicKey(Convert.FromBase64String(jwtTokenConfig.PublicKey), out _);
                 jwt.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtTokenConfig.Issuer,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtTokenConfig.SecretKey)),
+                    ValidAudience = jwtTokenConfig.Audience,
+                    ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
-                    ValidateAudience = false,
+                    ValidateAudience = true,
+                    RequireSignedTokens=true,
                     RequireExpirationTime = true,
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromMinutes(15)
+                    IssuerSigningKey = new RsaSecurityKey(rsa)
                 };
             });
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));
             services.AddControllers();
             services.AddScoped<IUserService,UserService>();
+            services.AddScoped<IJwtService, JwtService>();
         }
 
 
