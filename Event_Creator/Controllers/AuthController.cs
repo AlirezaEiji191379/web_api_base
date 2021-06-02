@@ -1,4 +1,5 @@
 ﻿using Event_Creator.models;
+using Event_Creator.models.Security;
 using Event_Creator.Other;
 using Event_Creator.Other.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -35,8 +36,43 @@ namespace Event_Creator.Controllers
                 return _appContext.Users.SingleOrDefault(x => x.Username.Equals(loginRequest.Username));
             }
             );
+
+            LockedAccount isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.UserId == user.UserId); });
+            if (isLocked != null)
+            {
+                return StatusCode(429,Errors.failedLoginLock);
+            }
+            FailedLogin failedLogin = await Task.Run(() => {
+                return _appContext.failedLogins.SingleOrDefault(x => x.user.Username == loginRequest.Username);
+            });
+
+            if(failedLogin!=null && failedLogin.request == 5)
+            {
+                await Task.Run(()=> _appContext.failedLogins.Remove(failedLogin));
+                var now = DateTime.Now;
+                var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+                LockedAccount locked = new LockedAccount()
+                {
+                    user=user,
+                    unlockedTime=unixTimeSeconds+300
+                };
+                await _appContext.lockedAccounts.AddAsync(locked);
+                await _appContext.SaveChangesAsync();
+                return StatusCode(429 ,Errors.failedLoginLock);
+            }
+
             if(user == null || user.Password.Equals(loginRequest.Password)==false)
             {
+                if (failedLogin == null) await _appContext.failedLogins.AddAsync(new FailedLogin() {
+                    request=1,
+                    user=user
+                });
+                else
+                {
+                    failedLogin.request++;
+                    await Task.Run(() => _appContext.failedLogins.Update(failedLogin));
+                }
+                await _appContext.SaveChangesAsync();
                 return NotFound(Errors.wrongAuth);
             }
 
@@ -82,7 +118,14 @@ namespace Event_Creator.Controllers
             {
                 await Task.Run(() => {
                     user = _appContext.Users.Single(a => a.Username == username);
-                    //_appContext.Users.Remove(user); add to locked account
+                    var now = DateTime.Now;
+                    var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+                    LockedAccount locked = new LockedAccount()
+                    {
+                        user = user,
+                        unlockedTime = unixTimeSeconds + 300
+                    };
+                    _appContext.lockedAccounts.Add(locked);
                     _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
                     _appContext.SaveChanges();
                 });

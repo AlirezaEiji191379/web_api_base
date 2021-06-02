@@ -52,6 +52,11 @@ namespace Event_Creator.Other
             get { return "کاربر گرامی لطفا اکانت خود را تایید نمایید"; }
         }
 
+        public static string failedLoginLock
+        {
+            get { return "کاربر گرامی لطفا بعدا اقدام به ورود نمایید"; }
+        }
+
 
     }
 }
