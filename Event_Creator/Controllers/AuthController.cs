@@ -209,11 +209,11 @@ namespace Event_Creator.Controllers
 
 
 
-        [Route("[action]")]
-        public string Test()
-        {
-            return _jwtService.JwtTokenGenerator(22,Guid.NewGuid().ToString());
-        } 
+        //[Route("[action]")]
+        //public string Test()
+        //{
+        //    return _jwtService.JwtTokenGenerator(22,Guid.NewGuid().ToString());
+        //} 
 
 
 
