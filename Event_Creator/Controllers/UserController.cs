@@ -36,14 +36,16 @@ namespace Event_Creator.Controllers
             }
             user.Enable = false;
             user.role = Role.User;
+            user.Password = _userService.Hash(user.Password);
             await _appContext.Users.AddAsync(user);
             Random random = new Random();
             int code = random.Next(100000, 999999);
-            await _userService.sendEmailToUser(user.Email , code);
-            Verification verification = new Verification() {
+            await _userService.sendEmailToUser(user.Email, code);
+            Verification verification = new Verification()
+            {
                 User = user,
                 VerificationCode = code,
-                usage=Usage.SignUp
+                usage = Usage.SignUp
             };
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();

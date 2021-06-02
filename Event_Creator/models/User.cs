@@ -16,7 +16,7 @@ namespace Event_Creator.models
         [StringLength(20,MinimumLength =8,ErrorMessage ="نام کاربری باید حداقل 8 و حداکثر 20 حرف باشد")]
         public string Username { get; set; }
         [Required(ErrorMessage ="رمز عبور الزامی است")]
-        [StringLength(20,MinimumLength =6,ErrorMessage ="رمز عبور باید حداقل 6 و حداکثر 20 حرفی باشد")]
+        [StringLength(80,MinimumLength =6,ErrorMessage ="رمز عبور باید حداقل 6  حرفی باشد")]
         public string Password { get; set; }
         [Required(ErrorMessage ="پست الکترونیکی الزامی است.")]
         [StringLength(60)]

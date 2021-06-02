@@ -2,9 +2,11 @@
 using Event_Creator.models.Security;
 using Event_Creator.Other;
 using Event_Creator.Other.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,15 +38,17 @@ namespace Event_Creator.Controllers
                 return _appContext.Users.SingleOrDefault(x => x.Username.Equals(loginRequest.Username));
             }
             );
-
-            LockedAccount isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.UserId == user.UserId); });
+            LockedAccount isLocked = null;
+            FailedLogin failedLogin = null;
+            if (user!=null) isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.UserId == user.UserId); });
             if (isLocked != null )
             {
                 var now = DateTime.Now;
                 var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
                 if (isLocked.unlockedTime > unixTimeSeconds)return StatusCode(429,Errors.failedLoginLock);
             }
-            FailedLogin failedLogin = await Task.Run(() => {
+
+            if(user!=null) failedLogin = await Task.Run(() => {
                 return _appContext.failedLogins.SingleOrDefault(x => x.user.Username == loginRequest.Username);
             });
 
@@ -63,24 +67,28 @@ namespace Event_Creator.Controllers
                 return StatusCode(429 ,Errors.failedLoginLock);
             }
 
-            if(user == null || user.Password.Equals(loginRequest.Password)==false)
+            if (user == null || _userService.Check(user.Password, loginRequest.Password) == false)
             {
-                if (failedLogin == null) await _appContext.failedLogins.AddAsync(new FailedLogin() {
-                    request=1,
-                    user=user
-                });
-                else
+                if (user != null && user.Enable == true)
                 {
-                    failedLogin.request++;
-                    await Task.Run(() => _appContext.failedLogins.Update(failedLogin));
+                    if (failedLogin == null) await _appContext.failedLogins.AddAsync(new FailedLogin()
+                    {
+                        request = 1,
+                        user = user
+                    });
+                    else
+                    {
+                        failedLogin.request++;
+                        await Task.Run(() => _appContext.failedLogins.Update(failedLogin));
+                    }
+                    await _appContext.SaveChangesAsync();
                 }
-                await _appContext.SaveChangesAsync();
                 return NotFound(Errors.wrongAuth);
             }
 
-            if (user.Enable == false)
+            if (user!=null && user.Enable == false)
             {
-                return Forbid(Errors.notEnabledLogin);
+                return BadRequest(Errors.notEnabledLogin);
             }
             Random random = new Random();
             int code = random.Next(100000, 999999);
@@ -210,7 +218,14 @@ namespace Event_Creator.Controllers
         }
 
 
+        [Authorize]
+        [Route("[action]")]
+        public async Task<IActionResult> logout()
+        {
 
+            var accessToken = Request.Headers[HeaderNames.Authorization];
+            return Ok(accessToken);
+        }
 
 
 

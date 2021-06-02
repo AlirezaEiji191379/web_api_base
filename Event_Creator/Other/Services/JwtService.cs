@@ -42,7 +42,7 @@ namespace Event_Creator.Other.Services
                         new Claim(JwtRegisteredClaimNames.Jti,jti),
                         new Claim("uid",userId.ToString())
                    },
-                   expires:now.AddMinutes(5),
+                   expires:now.AddSeconds(30),
                    signingCredentials: signingCredentials
             ) ;
             string token = new JwtSecurityTokenHandler().WriteToken(jwt);
@@ -61,7 +61,7 @@ namespace Event_Creator.Other.Services
             {
                 JwtTokenId = jwtId,
                 user=user,
-                expirationTime=unixTimeSeconds+604800,
+                expirationTime=unixTimeSeconds+600,
                 Revoked=false,
                 Token= Guid.NewGuid().ToString()
             };

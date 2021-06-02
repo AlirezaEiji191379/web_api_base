@@ -25,6 +25,7 @@ namespace Event_Creator.models
         public DbSet<RefreshToken> refreshTokens { get; set; }
         public DbSet<LockedAccount> lockedAccounts { get; set; }
         public DbSet<FailedLogin> failedLogins { get; set; }
+        public DbSet<JwtBlackList> jwtBlackLists { get; set; }
            
 
     }

@@ -92,6 +92,7 @@ namespace Event_Creator.Controllers
                 await Task.Run(() => {
                     User user = _appContext.Users.Single(a => a.Username == username);
                     _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
+                    _appContext.Users.Remove(user);
                     _appContext.SaveChanges();
                 });
                 return BadRequest(Errors.exceedVerification);
