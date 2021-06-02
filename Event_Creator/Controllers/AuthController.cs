@@ -38,9 +38,11 @@ namespace Event_Creator.Controllers
             );
 
             LockedAccount isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.UserId == user.UserId); });
-            if (isLocked != null)
+            if (isLocked != null )
             {
-                return StatusCode(429,Errors.failedLoginLock);
+                var now = DateTime.Now;
+                var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+                if (isLocked.unlockedTime > unixTimeSeconds)return StatusCode(429,Errors.failedLoginLock);
             }
             FailedLogin failedLogin = await Task.Run(() => {
                 return _appContext.failedLogins.SingleOrDefault(x => x.user.Username == loginRequest.Username);
@@ -158,7 +160,8 @@ namespace Event_Creator.Controllers
                 ErrorList = null,
                 success=true,
                 RefreshToken=refreshToken.Token,
-                JwtAccessToken=jwtAccessToken
+                JwtAccessToken=jwtAccessToken,
+                statusCode=200
             };
             return Ok(response);
         }
@@ -207,13 +210,6 @@ namespace Event_Creator.Controllers
         }
 
 
-
-
-        //[Route("[action]")]
-        //public string Test()
-        //{
-        //    return _jwtService.JwtTokenGenerator(22,Guid.NewGuid().ToString());
-        //} 
 
 
 

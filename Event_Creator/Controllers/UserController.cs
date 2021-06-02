@@ -5,13 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Event_Creator.models;
-using Event_Creator.data;
-using Microsoft.AspNetCore.Authorization;
-using Event_Creator.Other.Services;
 using Event_Creator.Other.Interfaces;
-using MailKit.Net.Smtp;
-using MailKit;
-using MimeKit;
 using Event_Creator.Other;
 
 namespace Event_Creator.Controllers
@@ -54,14 +48,6 @@ namespace Event_Creator.Controllers
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
             return Ok(Information.okSignUp);
-        }
-
-
-        //[Route("[action]")]
-        public string Test()
-        {
-
-            return "hi";
         }
 
 

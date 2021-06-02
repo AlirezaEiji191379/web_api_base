@@ -57,6 +57,25 @@ namespace Event_Creator.Other
             get { return "کاربر گرامی لطفا بعدا اقدام به ورود نمایید"; }
         }
 
+        public static string NotFoundRefreshToken
+        {
+            get { return "رفرش توکن نا معتبر است"; }
+        }
+
+        public static string InvalidJwtToken
+        {
+            get { return "اکسس توکن نامعتبر است"; }
+        }
+
+        public static string NotExpiredToken
+        {
+            get { return "توکن شما هنوز منقضی نشده است"; }
+        }
+
+        public static string RevokedToken
+        {
+            get { return "این رفرش توکن باطل شده است"; }
+        }
 
     }
 }

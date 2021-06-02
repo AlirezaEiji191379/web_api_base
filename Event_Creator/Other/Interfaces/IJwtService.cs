@@ -10,6 +10,7 @@ namespace Event_Creator.Other.Interfaces
     {
         string JwtTokenGenerator(long userId , string jti);
         Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId);
+        Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest);
 
     }
 }

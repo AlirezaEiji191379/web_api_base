@@ -11,6 +11,7 @@ namespace Event_Creator.Other
         public string JwtAccessToken { get; set; }
         public string RefreshToken { get; set; }
         public bool success { get; set; }
-        public List<string> ErrorList { get; set; }
+        public string ErrorList { get; set; }
+        public int statusCode { get; set; }
     }
 }
