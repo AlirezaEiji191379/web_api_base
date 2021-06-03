@@ -2,14 +2,18 @@
 using Event_Creator.models.Security;
 using Event_Creator.Other;
 using Event_Creator.Other.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace Event_Creator.Controllers
@@ -21,12 +25,13 @@ namespace Event_Creator.Controllers
         private readonly ApplicationContext _appContext;
         private readonly IJwtService _jwtService;
         private readonly IUserService _userService;
-
-        public AuthController(ApplicationContext applicationContext, IJwtService jwtService , IUserService userService)
+        private readonly JwtConfig _jwtConfig;
+        public AuthController(ApplicationContext applicationContext, IJwtService jwtService , IUserService userService , JwtConfig jwtConfig)
         {
             _appContext = applicationContext;
             _jwtService = jwtService;
             _userService = userService;
+            _jwtConfig = jwtConfig;
         }
 
         [Route("[action]")]
@@ -38,31 +43,42 @@ namespace Event_Creator.Controllers
                 return _appContext.Users.SingleOrDefault(x => x.Username.Equals(loginRequest.Username));
             }
             );
+            Verification verification = await Task.Run(() => {
+                return _appContext.verifications.FirstOrDefault(a => a.User.Username == loginRequest.Username);
+            });
+            if(verification!=null) return BadRequest(Information.okSignUp);
             LockedAccount isLocked = null;
             FailedLogin failedLogin = null;
             if (user!=null) isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.UserId == user.UserId); });
+            if (user != null) failedLogin = await Task.Run(() => {
+                return _appContext.failedLogins.SingleOrDefault(x => x.user.Username == loginRequest.Username);
+            });
+
+
             if (isLocked != null )
             {
                 var now = DateTime.Now;
                 var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-                if (isLocked.unlockedTime > unixTimeSeconds)return StatusCode(429,Errors.failedLoginLock);
+                if (isLocked.unlockedTime > unixTimeSeconds) return StatusCode(429, Errors.failedLoginLock);
+                else await Task.Run(() => _appContext.lockedAccounts.Remove(isLocked));
             }
 
-            if(user!=null) failedLogin = await Task.Run(() => {
-                return _appContext.failedLogins.SingleOrDefault(x => x.user.Username == loginRequest.Username);
-            });
+
 
             if(failedLogin!=null && failedLogin.request == 5)
             {
                 await Task.Run(()=> _appContext.failedLogins.Remove(failedLogin));
                 var now = DateTime.Now;
                 var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-                LockedAccount locked = new LockedAccount()
+                if (isLocked == null) await _appContext.lockedAccounts.AddAsync(new LockedAccount()
                 {
-                    user=user,
-                    unlockedTime=unixTimeSeconds+300
-                };
-                await _appContext.lockedAccounts.AddAsync(locked);
+                    user = user,
+                    unlockedTime = unixTimeSeconds + 300/////////////////////////////////////////
+                });
+                else {
+                    isLocked.unlockedTime = unixTimeSeconds + 300;//////////////////////////////
+                    await Task.Run(() => { _appContext.lockedAccounts.Update(isLocked); });
+                }
                 await _appContext.SaveChangesAsync();
                 return StatusCode(429 ,Errors.failedLoginLock);
             }
@@ -93,7 +109,7 @@ namespace Event_Creator.Controllers
             Random random = new Random();
             int code = random.Next(100000, 999999);
             await _userService.sendEmailToUser(user.Email,code);
-            Verification verification = new Verification()
+            Verification newVerification = new Verification()
             {
                 VerificationCode = code,
                 Requested=0,
@@ -101,7 +117,7 @@ namespace Event_Creator.Controllers
                 User=user
             };
 
-             await _appContext.verifications.AddAsync(verification);
+             await _appContext.verifications.AddAsync(newVerification);
              await _appContext.SaveChangesAsync();
             return Ok(Information.okSignIn);
         }
@@ -110,6 +126,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{username}/{code}")]
         public async Task<IActionResult> Verify(string username, int code)
         {
+            LockedAccount isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.Username == username); });
             Verification verification = await Task.Run(() => {
                 return _appContext.verifications.FirstOrDefault(a => a.User.Username == username);
             });
@@ -135,7 +152,12 @@ namespace Event_Creator.Controllers
                         user = user,
                         unlockedTime = unixTimeSeconds + 300
                     };
-                    _appContext.lockedAccounts.Add(locked);
+                   if(isLocked==null) _appContext.lockedAccounts.Add(locked);
+                    else
+                    {
+                        isLocked.unlockedTime = unixTimeSeconds + 300;
+                        _appContext.lockedAccounts.Update(isLocked); ////////////////////////////////////////////
+                    }
                     _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
                     _appContext.SaveChanges();
                 });
@@ -189,6 +211,11 @@ namespace Event_Creator.Controllers
                 return BadRequest(Errors.NullVerification);
             }
 
+            if (verification.usage != Usage.Login)
+            {
+                return BadRequest(Errors.falseVerificationType);
+            }
+
             if (verification.Resended == true)
             {
                 await Task.Run(() => {
@@ -196,13 +223,10 @@ namespace Event_Creator.Controllers
                     _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
                     _appContext.SaveChanges();
                 });
-                return BadRequest(Errors.exceedVerification);
+                return BadRequest(Errors.exceedLogin);
             }
 
-            if (verification.usage != Usage.Login)
-            {
-                return BadRequest(Errors.falseVerificationType);
-            }
+
 
             Random random = new Random();
             int code = random.Next(100000, 999999);
@@ -218,13 +242,13 @@ namespace Event_Creator.Controllers
         }
 
 
-        [Authorize]
+        
         [Route("[action]")]
+        [Authorize]
         public async Task<IActionResult> logout()
         {
 
-            var accessToken = Request.Headers[HeaderNames.Authorization];
-            return Ok(accessToken);
+            return Ok();
         }
 
 

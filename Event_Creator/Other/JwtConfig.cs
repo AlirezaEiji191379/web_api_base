@@ -5,6 +5,12 @@ using System.Threading.Tasks;
 
 namespace Event_Creator.Other
 {
+    public static class TypeConverterExtension
+    {
+        public static byte[] ToByteArray(this string value) =>
+               Convert.FromBase64String(value);
+    }
+
     public class JwtConfig
     {
         public string PrivateKey { get; set; }

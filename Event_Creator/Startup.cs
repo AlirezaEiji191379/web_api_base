@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Identity;
 using Event_Creator.Other.Interfaces;
 using Event_Creator.Other.Services;
 using System.Security.Cryptography;
+using Microsoft.IdentityModel.Logging;
 
 namespace Event_Creator
 {
@@ -40,6 +41,18 @@ namespace Event_Creator
             var jwtTokenConfig = Configuration.GetSection("JwtConfig").Get<JwtConfig>();
             services.AddSingleton(jwtTokenConfig);
 
+            services.AddSingleton<RsaSecurityKey>(provider => {
+                // It's required to register the RSA key with depedency injection.
+                // If you don't do this, the RSA instance will be prematurely disposed.
+                RSA rsa = RSA.Create();
+                rsa.ImportRSAPublicKey(
+                    source: Convert.FromBase64String(jwtTokenConfig.PublicKey),
+                    bytesRead: out int _
+                );
+
+                return new RsaSecurityKey(rsa);
+            });
+            IdentityModelEventSource.ShowPII = true;
             services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -47,19 +60,20 @@ namespace Event_Creator
             .AddJwtBearer(jwt => {
                 jwt.RequireHttpsMetadata = false;
                 jwt.SaveToken = true;
-                using RSA rsa = RSA.Create();
-                rsa.ImportRSAPublicKey(Convert.FromBase64String(jwtTokenConfig.PublicKey), out _);
+                SecurityKey rsa = services.BuildServiceProvider().GetRequiredService<RsaSecurityKey>();
                 jwt.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidIssuer = jwtTokenConfig.Issuer,
-                    ValidAudience = jwtTokenConfig.Audience,
-                    ValidateIssuerSigningKey = true,
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
+                //ValidIssuer = jwtTokenConfig.Issuer,
+                //ValidAudience = jwtTokenConfig.Audience,
+                ValidateIssuerSigningKey = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
                     RequireSignedTokens=true,
                     RequireExpirationTime = true,
                     ValidateLifetime = true,
-                    IssuerSigningKey = new RsaSecurityKey(rsa)
+                    IssuerSigningKey = rsa,
+                    //ClockSkew = TimeSpan.FromSeconds(30)
+                   // IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
             });
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));

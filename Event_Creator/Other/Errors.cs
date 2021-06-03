@@ -7,6 +7,11 @@ namespace Event_Creator.Other
 {
     public static class Errors
     {
+        public static string exceedLogin {
+            get { return "لطفا مجددا اقدام به ورود نمایید"; }
+        }
+
+
         public static string EmailDuplication
         {
             get { return "این پست الکترونیکی قبلا ثبت شده است"; }

@@ -10,6 +10,5 @@ namespace Event_Creator.models
         public long LockedAccountId { get; set; }
         public User user { get; set; }
         public Int64 unlockedTime { get; set; }
-
     }
 }

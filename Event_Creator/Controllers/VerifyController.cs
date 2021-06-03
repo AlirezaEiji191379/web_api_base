@@ -87,6 +87,12 @@ namespace Event_Creator.Controllers
                 return BadRequest(Errors.NullVerification);
             }
 
+            if (verification.usage != Usage.SignUp)
+            {
+                return BadRequest(Errors.falseVerificationType);
+            }
+
+
             if (verification.Resended == true)
             {
                 await Task.Run(() => {
@@ -98,11 +104,6 @@ namespace Event_Creator.Controllers
                 return BadRequest(Errors.exceedVerification);
             }
 
-
-            if(verification.usage != Usage.SignUp)
-            {
-                return BadRequest(Errors.falseVerificationType);
-            }
 
             Random random = new Random();
             int code = random.Next(100000, 999999);

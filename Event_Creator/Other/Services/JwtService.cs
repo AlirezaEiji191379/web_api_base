@@ -15,55 +15,60 @@ namespace Event_Creator.Other.Services
     {
         private readonly ApplicationContext _appContext;
         private readonly JwtConfig _jwtConfig;
-        public JwtService(ApplicationContext app , JwtConfig config)
+        private readonly RsaSecurityKey _rsaSecurityKey;
+        public JwtService(ApplicationContext app, JwtConfig config , RsaSecurityKey rsa)
         {
             _appContext = app;
             _jwtConfig = config;
+            _rsaSecurityKey = rsa;
         }
 
-        public string JwtTokenGenerator(long userId , string jti)
+        public string JwtTokenGenerator(long userId, string jti)
         {
-            var privateKey = _jwtConfig.PrivateKey;
+            var privateKey = Convert.FromBase64String(_jwtConfig.PrivateKey);
             using RSA rsa = RSA.Create();
-            rsa.ImportRSAPrivateKey(Convert.FromBase64String(privateKey), out _);
+            rsa.ImportRSAPrivateKey(privateKey, out _);
+            var cryptoProviderFactory = new CryptoProviderFactory();
+            cryptoProviderFactory.CacheSignatureProviders = false;
             var signingCredentials = new SigningCredentials(
                 key: new RsaSecurityKey(rsa),
                 algorithm: SecurityAlgorithms.RsaSha256
-            );
+            )
+            { CryptoProviderFactory=cryptoProviderFactory};
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
 
             var jwt = new JwtSecurityToken(
-                   audience: _jwtConfig.Issuer,
-                   issuer: _jwtConfig.Issuer,
+                   //audience: _jwtConfig.Issuer,
+                   //issuer: _jwtConfig.Issuer,
                    claims: new Claim[]
                    {
                         new Claim(JwtRegisteredClaimNames.Iat, unixTimeSeconds.ToString(),ClaimValueTypes.Integer64),
                         new Claim(JwtRegisteredClaimNames.Jti,jti),
                         new Claim("uid",userId.ToString())
                    },
-                   expires:now.AddSeconds(30),
+                   expires: now.AddSeconds(40),
                    signingCredentials: signingCredentials
-            ) ;
+            );
             string token = new JwtSecurityTokenHandler().WriteToken(jwt);
             return token;
         }
 
 
-        public async Task<RefreshToken> GenerateRefreshToken(string jwtId , long userId)
+        public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId)
         {
             User user = await Task.Run(() => {
-                return _appContext.Users.SingleOrDefault(x=> x.UserId == userId);
+                return _appContext.Users.SingleOrDefault(x => x.UserId == userId);
             });
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             return new RefreshToken()
             {
                 JwtTokenId = jwtId,
-                user=user,
-                expirationTime=unixTimeSeconds+600,
-                Revoked=false,
-                Token= Guid.NewGuid().ToString()
+                user = user,
+                expirationTime = unixTimeSeconds + 90,
+                Revoked = false,
+                Token = Guid.NewGuid().ToString()
             };
         }
 
@@ -73,8 +78,9 @@ namespace Event_Creator.Other.Services
             RefreshToken refreshToken = await Task.Run(() => {
                 return _appContext.refreshTokens.SingleOrDefault(x => x.Token == refreshRequest.refreshToken);
             });
+            if (refreshToken != null) await _appContext.Entry(refreshToken).Reference(x => x.user).LoadAsync();
 
-            if(refreshToken== null)
+            if (refreshToken == null)
             {
                 return new AuthResponse()
                 {
@@ -86,73 +92,82 @@ namespace Event_Creator.Other.Services
                 };
             }
 
-            using RSA rsa = RSA.Create();
-            rsa.ImportRSAPublicKey(Convert.FromBase64String(_jwtConfig.PublicKey), out _);
-             var parameters = new TokenValidationParameters
+            if (refreshToken.Revoked == true)
             {
-                ValidIssuer = _jwtConfig.Issuer,
-                ValidAudience = _jwtConfig.Audience,
+                return new AuthResponse()
+                {
+                    ErrorList = Errors.RevokedToken,
+                    RefreshToken = null,
+                    JwtAccessToken = null,
+                    statusCode = 403,
+                    success = false
+                };
+            }
+
+            //using RSA rsa = RSA.Create();
+            //rsa.ImportRSAPublicKey(Convert.FromBase64String(_jwtConfig.PublicKey), out _);
+            var parameters = new TokenValidationParameters
+            {
+                ////ValidIssuer = _jwtConfig.Issuer,
+                ////ValidAudience = _jwtConfig.Audience,
                 ValidateIssuerSigningKey = true,
-                ValidateIssuer = true,
-                ValidateAudience = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
                 RequireSignedTokens = true,
                 RequireExpirationTime = true,
-                //ValidateLifetime = true,
-                IssuerSigningKey = new RsaSecurityKey(rsa)
+                ValidateLifetime = false,
+                IssuerSigningKey = _rsaSecurityKey
             };
 
             try
             {
                 var jwtToken = new JwtSecurityTokenHandler().ValidateToken(refreshRequest.jwtAccessToken, parameters, out SecurityToken validatedToken);
 
-                var jti = jwtToken.Claims.SingleOrDefault(x => x.Type== JwtRegisteredClaimNames.Jti).Value;
-                
-                if(refreshToken.JwtTokenId != jti)
-                {
-                    return new AuthResponse() {
-                        RefreshToken = null,
-                        JwtAccessToken = null,
-                        statusCode = 403,
-                        ErrorList =Errors.InvalidJwtToken,
-                        success = false
-                    };
-                }
+                var jti = jwtToken.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
 
-                var utcExpiryDate = long.Parse(jwtToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
-                var now = DateTime.Now;
-                var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-                if (utcExpiryDate > unixTimeSeconds)
-                {
-                    return new AuthResponse()
-                    {
-                        ErrorList = Errors.NotExpiredToken,
-                        JwtAccessToken = null,
-                        RefreshToken = null,
-                        statusCode = 403,
-                        success = false
-                    };
-                }
+            //if (refreshToken.JwtTokenId != jti)
+            //{
+            //    return new AuthResponse()
+            //    {
+            //        RefreshToken = null,
+            //        JwtAccessToken = null,
+            //        statusCode = 403,
+            //        ErrorList = Errors.InvalidJwtToken,
+            //        success = false
+            //    };
+            //}
 
-                if (refreshToken.Revoked == true)
-                {
-                    return new AuthResponse()
-                    {
-                        ErrorList = Errors.RevokedToken,
-                        RefreshToken = null,
-                        JwtAccessToken = null,
-                        statusCode = 403,
-                        success=false
-                    };
-                }
 
-                string jwtId = Guid.NewGuid().ToString();
-                string newJwtAccessToken = this.JwtTokenGenerator(refreshToken.user.UserId,jwtId);
-                RefreshToken newRefreshToken = await this.GenerateRefreshToken(jwtId,refreshToken.user.UserId);
+            var utcExpiryDate = long.Parse(jwtToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            if (utcExpiryDate > unixTimeSeconds)
+            {
+                return new AuthResponse()
+                {
+                    ErrorList = Errors.NotExpiredToken,
+                    JwtAccessToken = null,
+                    RefreshToken = null,
+                    statusCode = 403,
+                    success = false
+                };
+            }
+
+
+
+
+            string jwtId = Guid.NewGuid().ToString();
+                string newJwtAccessToken = JwtTokenGenerator(refreshToken.user.UserId, jwtId);
+                refreshToken= await GenerateRefreshToken(jwtId, refreshToken.user.UserId);
+            //await Task.Run(() =>
+            //{
+            //    _appContext.refreshTokens.Update(refreshToken);
+            //});
 
                 return new AuthResponse()
                 {
                     ErrorList = null,
-                    RefreshToken = newRefreshToken.Token,
+                    RefreshToken = refreshToken.Token,
                     JwtAccessToken = newJwtAccessToken,
                     statusCode = 200,
                     success = true
@@ -169,7 +184,7 @@ namespace Event_Creator.Other.Services
                     ErrorList = Errors.InvalidJwtToken
                 };
             }
-        }
+    }
 
 
 

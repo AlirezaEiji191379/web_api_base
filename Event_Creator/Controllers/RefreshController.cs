@@ -1,11 +1,15 @@
-﻿using Event_Creator.Other;
+﻿using Event_Creator.models;
+using Event_Creator.Other;
 using Event_Creator.Other.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace Event_Creator.Controllers
@@ -16,10 +20,12 @@ namespace Event_Creator.Controllers
     {
 
         private readonly IJwtService _jwtService;
-
-        public RefreshController(IJwtService jwtService)
+        private readonly ApplicationContext _appContext;
+        private readonly JwtConfig _jwtConfig;
+        public RefreshController(IJwtService jwtService , ApplicationContext applicationContext)
         {
             _jwtService = jwtService;
+            _appContext = applicationContext;
         }
 
         [Route("")]
@@ -27,8 +33,9 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> GetRefreshToken([FromBody] RefreshRequest refreshRequest)
         {
             AuthResponse authResponse = await _jwtService.RefreshToken(refreshRequest);
-            return StatusCode(authResponse.statusCode,authResponse);
+            return Ok(authResponse);
         }
+
 
 
 
