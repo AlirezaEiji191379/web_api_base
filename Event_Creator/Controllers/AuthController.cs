@@ -54,6 +54,10 @@ namespace Event_Creator.Controllers
                 return _appContext.failedLogins.SingleOrDefault(x => x.user.Username == loginRequest.Username);
             });
 
+            if (user != null && user.Enable == false)
+            {
+                return BadRequest(Errors.notEnabledLogin);
+            }
 
             if (isLocked != null )
             {
@@ -102,10 +106,6 @@ namespace Event_Creator.Controllers
                 return NotFound(Errors.wrongAuth);
             }
 
-            if (user!=null && user.Enable == false)
-            {
-                return BadRequest(Errors.notEnabledLogin);
-            }
             Random random = new Random();
             int code = random.Next(100000, 999999);
             await _userService.sendEmailToUser(user.Email,code);

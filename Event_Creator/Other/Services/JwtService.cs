@@ -76,10 +76,9 @@ namespace Event_Creator.Other.Services
         public async Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest)
         {
             RefreshToken refreshToken = await Task.Run(() => {
-                return _appContext.refreshTokens.SingleOrDefault(x => x.Token == refreshRequest.refreshToken);
+                return _appContext.refreshTokens.SingleOrDefault(x => x.Token.Equals(refreshRequest.refreshToken));
             });
             if (refreshToken != null) await _appContext.Entry(refreshToken).Reference(x => x.user).LoadAsync();
-
             if (refreshToken == null)
             {
                 return new AuthResponse()
@@ -89,6 +88,22 @@ namespace Event_Creator.Other.Services
                     success = false,
                     ErrorList = Errors.NotFoundRefreshToken,
                     statusCode = 404
+                };
+            }
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+
+            if(refreshToken.expirationTime < unixTimeSeconds)
+            {
+                await Task.Run(() => _appContext.refreshTokens.Remove(refreshToken));
+                await _appContext.SaveChangesAsync();
+                return new AuthResponse()
+                {
+                    RefreshToken = null,
+                    ErrorList = Errors.refreshTokenExpired,
+                    JwtAccessToken = null,
+                    statusCode = 403,
+                    success = false
                 };
             }
 
@@ -104,12 +119,8 @@ namespace Event_Creator.Other.Services
                 };
             }
 
-            //using RSA rsa = RSA.Create();
-            //rsa.ImportRSAPublicKey(Convert.FromBase64String(_jwtConfig.PublicKey), out _);
             var parameters = new TokenValidationParameters
             {
-                ////ValidIssuer = _jwtConfig.Issuer,
-                ////ValidAudience = _jwtConfig.Audience,
                 ValidateIssuerSigningKey = true,
                 ValidateIssuer = false,
                 ValidateAudience = false,
@@ -124,50 +135,31 @@ namespace Event_Creator.Other.Services
                 var jwtToken = new JwtSecurityTokenHandler().ValidateToken(refreshRequest.jwtAccessToken, parameters, out SecurityToken validatedToken);
 
                 var jti = jwtToken.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
+                var utcExpiryDate = long.Parse(jwtToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
 
-            //if (refreshToken.JwtTokenId != jti)
-            //{
-            //    return new AuthResponse()
-            //    {
-            //        RefreshToken = null,
-            //        JwtAccessToken = null,
-            //        statusCode = 403,
-            //        ErrorList = Errors.InvalidJwtToken,
-            //        success = false
-            //    };
-            //}
-
-
-            var utcExpiryDate = long.Parse(jwtToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
-            var now = DateTime.Now;
-            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-            if (utcExpiryDate > unixTimeSeconds)
-            {
-                return new AuthResponse()
+                if (utcExpiryDate > unixTimeSeconds)
                 {
-                    ErrorList = Errors.NotExpiredToken,
-                    JwtAccessToken = null,
-                    RefreshToken = null,
-                    statusCode = 403,
-                    success = false
-                };
-            }
+                    return new AuthResponse()
+                    {
+                        ErrorList = Errors.NotExpiredToken,
+                        JwtAccessToken = null,
+                        RefreshToken = null,
+                        statusCode = 403,
+                        success = false
+                    };
+                }
 
-
-
-
-            string jwtId = Guid.NewGuid().ToString();
+              
+                string jwtId = Guid.NewGuid().ToString();
                 string newJwtAccessToken = JwtTokenGenerator(refreshToken.user.UserId, jwtId);
-                refreshToken= await GenerateRefreshToken(jwtId, refreshToken.user.UserId);
-            //await Task.Run(() =>
-            //{
-            //    _appContext.refreshTokens.Update(refreshToken);
-            //});
-
+                RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId);
+                await _appContext.refreshTokens.AddAsync(newrefreshToken);
+                await Task.Run(() => _appContext.refreshTokens.Remove(refreshToken));
+                await _appContext.SaveChangesAsync();
                 return new AuthResponse()
                 {
                     ErrorList = null,
-                    RefreshToken = refreshToken.Token,
+                    RefreshToken = newrefreshToken.Token,
                     JwtAccessToken = newJwtAccessToken,
                     statusCode = 200,
                     success = true
@@ -184,7 +176,7 @@ namespace Event_Creator.Other.Services
                     ErrorList = Errors.InvalidJwtToken
                 };
             }
-    }
+        }
 
 
 

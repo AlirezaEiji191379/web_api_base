@@ -82,5 +82,10 @@ namespace Event_Creator.Other
             get { return "این رفرش توکن باطل شده است"; }
         }
 
+        public static string refreshTokenExpired
+        {
+            get { return "کاربر گرامی مجددا اقدام به ورود نمایید"; }
+        }
+
     }
 }
