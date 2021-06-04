@@ -10,7 +10,7 @@ using MailKit;
 using MimeKit;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
-
+using Microsoft.EntityFrameworkCore;
 namespace Event_Creator.Other.Services
 {
     public class UserService : IUserService
@@ -27,21 +27,19 @@ namespace Event_Creator.Other.Services
         }
 
 
-        public Task<List<string>> checkUserDuplicate(User user)
+        public async Task<List<string>> checkUserDuplicate(User user)
         {
-            return Task.Run(() =>
-            {
+
                  List<string> allDuplications = new List<string>();
 
-                 if (_applicationContext.Users.SingleOrDefault(a => a.Username == user.Username) != null) allDuplications.Add(Errors.UsernameDuplication);
+                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.Username == user.Username) != null) allDuplications.Add(Errors.UsernameDuplication);
 
-                 if (_applicationContext.Users.SingleOrDefault(a => a.Email == user.Email) != null) allDuplications.Add(Errors.EmailDuplication);
+                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.Email == user.Email) != null) allDuplications.Add(Errors.EmailDuplication);
 
-                 if (_applicationContext.Users.SingleOrDefault(a => a.PhoneNumber == user.PhoneNumber) != null) allDuplications.Add(Errors.PhoneDuplication);
+                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.PhoneNumber == user.PhoneNumber) != null) allDuplications.Add(Errors.PhoneDuplication);
 
                  return allDuplications;
-            }
-           );
+
         }
 
         public Task sendSmsToUser(string phoneNumber)

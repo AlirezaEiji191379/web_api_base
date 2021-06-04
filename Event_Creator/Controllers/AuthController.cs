@@ -15,7 +15,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-
+using Microsoft.EntityFrameworkCore;
 namespace Event_Creator.Controllers
 {
     [Route("[controller]")]
@@ -38,28 +38,19 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
-            User user =await Task.Run(() =>
-            {
-                return _appContext.Users.SingleOrDefault(x => x.Username.Equals(loginRequest.Username));
-            }
-            );
-            Verification verification = await Task.Run(() => {
-                return _appContext.verifications.FirstOrDefault(a => a.User.Username == loginRequest.Username);
-            });
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Username.Equals(loginRequest.Username));
+            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(loginRequest.Username));
             if(verification!=null) return BadRequest(Information.okSignUp);
             LockedAccount isLocked = null;
             FailedLogin failedLogin = null;
-            if (user!=null) isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.UserId == user.UserId); });
-            if (user != null) failedLogin = await Task.Run(() => {
-                return _appContext.failedLogins.SingleOrDefault(x => x.user.Username == loginRequest.Username);
-            });
-
+            if (user != null) isLocked = await _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == user.UserId);
+            if (user != null) failedLogin = await _appContext.failedLogins.Include(x => x.user).FirstOrDefaultAsync(x => x.user.Username.Equals(loginRequest.Username));
             if (user != null && user.Enable == false)
             {
                 return BadRequest(Errors.notEnabledLogin);
             }
 
-            if (isLocked != null )
+            if (isLocked != null)
             {
                 var now = DateTime.Now;
                 var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -69,9 +60,9 @@ namespace Event_Creator.Controllers
 
 
 
-            if(failedLogin!=null && failedLogin.request == 5)
+            if (failedLogin != null && failedLogin.request == 5)
             {
-                await Task.Run(()=> _appContext.failedLogins.Remove(failedLogin));
+                _appContext.failedLogins.Remove(failedLogin);
                 var now = DateTime.Now;
                 var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
                 if (isLocked == null) await _appContext.lockedAccounts.AddAsync(new LockedAccount()
@@ -79,12 +70,13 @@ namespace Event_Creator.Controllers
                     user = user,
                     unlockedTime = unixTimeSeconds + 300/////////////////////////////////////////
                 });
-                else {
+                else
+                {
                     isLocked.unlockedTime = unixTimeSeconds + 300;//////////////////////////////
-                    await Task.Run(() => { _appContext.lockedAccounts.Update(isLocked); });
+                    _appContext.lockedAccounts.Update(isLocked);
                 }
-                await _appContext.SaveChangesAsync();
-                return StatusCode(429 ,Errors.failedLoginLock);
+                 await _appContext.SaveChangesAsync();
+                return StatusCode(429, Errors.failedLoginLock);
             }
 
             if (user == null || _userService.Check(user.Password, loginRequest.Password) == false)
@@ -99,7 +91,7 @@ namespace Event_Creator.Controllers
                     else
                     {
                         failedLogin.request++;
-                        await Task.Run(() => _appContext.failedLogins.Update(failedLogin));
+                        _appContext.failedLogins.Update(failedLogin);
                     }
                     await _appContext.SaveChangesAsync();
                 }
@@ -108,17 +100,17 @@ namespace Event_Creator.Controllers
 
             Random random = new Random();
             int code = random.Next(100000, 999999);
-            await _userService.sendEmailToUser(user.Email,code);
+            await _userService.sendEmailToUser(user.Email, code);
             Verification newVerification = new Verification()
             {
                 VerificationCode = code,
-                Requested=0,
-                usage=Usage.Login,
-                User=user
+                Requested = 0,
+                usage = Usage.Login,
+                User = user
             };
 
-             await _appContext.verifications.AddAsync(newVerification);
-             await _appContext.SaveChangesAsync();
+            await _appContext.verifications.AddAsync(newVerification);
+            await _appContext.SaveChangesAsync();
             return Ok(Information.okSignIn);
         }
 
@@ -127,9 +119,7 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> Verify(string username, int code)
         {
             LockedAccount isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.Username == username); });
-            Verification verification = await Task.Run(() => {
-                return _appContext.verifications.FirstOrDefault(a => a.User.Username == username);
-            });
+            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(username));
 
             if (verification == null)
             {
@@ -143,8 +133,7 @@ namespace Event_Creator.Controllers
             User user = null;
             if (verification.Requested == 5)
             {
-                await Task.Run(() => {
-                    user = _appContext.Users.Single(a => a.Username == username);
+                    user = await _appContext.Users.SingleAsync(a => a.Username == username);
                     var now = DateTime.Now;
                     var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
                     LockedAccount locked = new LockedAccount()
@@ -152,33 +141,29 @@ namespace Event_Creator.Controllers
                         user = user,
                         unlockedTime = unixTimeSeconds + 300
                     };
-                   if(isLocked==null) _appContext.lockedAccounts.Add(locked);
+                   if(isLocked==null)await _appContext.lockedAccounts.AddAsync(locked);
                     else
                     {
                         isLocked.unlockedTime = unixTimeSeconds + 300;
                         _appContext.lockedAccounts.Update(isLocked); ////////////////////////////////////////////
                     }
-                    _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
-                    _appContext.SaveChanges();
-                });
+                    _appContext.verifications.Remove(await _appContext.verifications.FirstAsync(a => a.User.UserId == user.UserId));
+                    await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedVerification);
             }
 
             if (verification.VerificationCode != code)
             {
-                await Task.Run(() => {
                     verification.Requested++;
                     _appContext.verifications.Update(verification);
-                    _appContext.SaveChanges();
-                });
+                    await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.failedVerification);
             }
 
-            await Task.Run(() => {
-                user = _appContext.Users.Single(a => a.Username == username);
-                _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
-                _appContext.SaveChanges();
-            });
+
+            user =await _appContext.Users.SingleAsync(a => a.Username == username);
+            _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
+            await _appContext.SaveChangesAsync();
 
             string jwtId = Guid.NewGuid().ToString();
             string jwtAccessToken = _jwtService.JwtTokenGenerator(user.UserId,jwtId);
@@ -202,10 +187,7 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> ResendCode(string username)
         {
             User user = null;
-            Verification verification = await Task.Run(() => {
-                user = _appContext.Users.SingleOrDefault(a => a.Username == username);
-                return _appContext.verifications.FirstOrDefault(a => a.User.Username == username);
-            });
+            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(username));
             if (verification == null)
             {
                 return BadRequest(Errors.NullVerification);
@@ -218,11 +200,9 @@ namespace Event_Creator.Controllers
 
             if (verification.Resended == true)
             {
-                await Task.Run(() => {
-                    User user = _appContext.Users.Single(a => a.Username == username);
-                    _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
-                    _appContext.SaveChanges();
-                });
+                Verification verification1 = await _appContext.verifications.FirstOrDefaultAsync(x => x.User.Username.Equals(username)); 
+                _appContext.verifications.Remove(verification1);
+                await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedLogin);
             }
 
@@ -230,13 +210,11 @@ namespace Event_Creator.Controllers
 
             Random random = new Random();
             int code = random.Next(100000, 999999);
-            await Task.Run(() => {
-                verification.VerificationCode = code;
-                verification.Requested = 0;
-                verification.Resended = true;
-                _appContext.verifications.Update(verification);
-                _appContext.SaveChanges();
-            });
+            verification.VerificationCode = code;
+            verification.Requested = 0;
+             verification.Resended = true;
+            _appContext.verifications.Update(verification);
+            await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(user.Email, code);
             return Ok(Information.okResendCode);
         }

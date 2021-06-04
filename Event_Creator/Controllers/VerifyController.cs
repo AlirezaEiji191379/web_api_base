@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Microsoft.EntityFrameworkCore;
 namespace Event_Creator.Controllers
 {
     [Route("[controller]")]
@@ -27,9 +27,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{username}/{code}")]
         public async Task<IActionResult> Verify(string username, int code)
         {
-            Verification verification = await Task.Run(() => {
-                return _appContext.verifications.FirstOrDefault(a => a.User.Username == username);
-            });
+            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(a => a.User.Username == username);
 
             if (verification == null)
             {
@@ -40,35 +38,31 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.falseVerificationType);
             }
-
+            User user = null;
             if (verification.Requested == 5)
             {
-                await Task.Run(() => {
-                    User user = _appContext.Users.Single(a => a.Username == username);
-                    _appContext.Users.Remove(user);
-                    _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
-                    _appContext.SaveChanges();
-                });
-                return BadRequest(Errors.exceedVerification);
+
+             user = await _appContext.Users.SingleAsync(a => a.Username == username);
+             _appContext.Users.Remove(user);
+             _appContext.verifications.Remove(await _appContext.verifications.Include(x => x.User).SingleAsync(a => a.User.UserId == user.UserId));
+             await _appContext.SaveChangesAsync();
+             return BadRequest(Errors.exceedVerification);
             }
 
             if (verification.VerificationCode != code)
             {
-                await Task.Run(() => {
-                    verification.Requested++;
-                    _appContext.verifications.Update(verification);
-                    _appContext.SaveChanges();
-                });
-                return BadRequest(Errors.failedVerification);
+              verification.Requested++;
+              _appContext.verifications.Update(verification);
+              await _appContext.SaveChangesAsync();
+              return BadRequest(Errors.failedVerification);
             }
 
-            await Task.Run(() => {
-                User user = _appContext.Users.Single(a => a.Username == username);
-                user.Enable = true;
-                _appContext.Users.Update(user);
-                _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
-                _appContext.SaveChanges();
-            });
+              user =await _appContext.Users.SingleAsync(a => a.Username == username);
+              user.Enable = true;
+             _appContext.Users.Update(user);
+             _appContext.verifications.Remove(await _appContext.verifications.Include(x => x.User).SingleAsync(a => a.User.UserId == user.UserId));
+             await _appContext.SaveChangesAsync();
+
             return Ok(Information.okVerifySignUp);
         }
 
@@ -78,10 +72,7 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> ResendCode(string username)
         {
             User user = null;
-            Verification verification = await Task.Run(() => {
-                user = _appContext.Users.SingleOrDefault(a => a.Username == username);
-                 return _appContext.verifications.FirstOrDefault(a => a.User.Username == username);
-            });
+            Verification verification = await  _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(a => a.User.Username == username);
             if (verification == null)
             {
                 return BadRequest(Errors.NullVerification);
@@ -95,25 +86,21 @@ namespace Event_Creator.Controllers
 
             if (verification.Resended == true)
             {
-                await Task.Run(() => {
-                    User user = _appContext.Users.Single(a => a.Username == username);
-                    _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
-                    _appContext.Users.Remove(user);
-                    _appContext.SaveChanges();
-                });
+                user = _appContext.Users.Single(a => a.Username == username);
+                _appContext.verifications.Remove(await _appContext.verifications.Include(x => x.User).SingleAsync(a => a.User.UserId == user.UserId));
+                _appContext.Users.Remove(user);
+                await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedVerification);
             }
 
 
             Random random = new Random();
             int code = random.Next(100000, 999999);
-            await Task.Run(() => {
-                verification.VerificationCode = code;
-                verification.Requested = 0;
-                verification.Resended = true;
-                _appContext.verifications.Update(verification);
-                _appContext.SaveChanges();
-            });
+            verification.VerificationCode = code;
+            verification.Requested = 0;
+            verification.Resended = true;
+            _appContext.verifications.Update(verification);
+            await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(user.Email,code);
             return Ok(Information.okResendCode);
         }

@@ -8,7 +8,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-
+using Microsoft.EntityFrameworkCore;
 namespace Event_Creator.Other.Services
 {
     public class JwtService : IJwtService
@@ -75,9 +75,7 @@ namespace Event_Creator.Other.Services
 
         public async Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest)
         {
-            RefreshToken refreshToken = await Task.Run(() => {
-                return _appContext.refreshTokens.SingleOrDefault(x => x.Token.Equals(refreshRequest.refreshToken));
-            });
+            RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.Token.Equals(refreshRequest.refreshToken));
             if (refreshToken != null) await _appContext.Entry(refreshToken).Reference(x => x.user).LoadAsync();
             if (refreshToken == null)
             {
@@ -95,7 +93,7 @@ namespace Event_Creator.Other.Services
 
             if(refreshToken.expirationTime < unixTimeSeconds)
             {
-                await Task.Run(() => _appContext.refreshTokens.Remove(refreshToken));
+                _appContext.refreshTokens.Remove(refreshToken);
                 await _appContext.SaveChangesAsync();
                 return new AuthResponse()
                 {
@@ -154,7 +152,7 @@ namespace Event_Creator.Other.Services
                 string newJwtAccessToken = JwtTokenGenerator(refreshToken.user.UserId, jwtId);
                 RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId);
                 await _appContext.refreshTokens.AddAsync(newrefreshToken);
-                await Task.Run(() => _appContext.refreshTokens.Remove(refreshToken));
+                _appContext.refreshTokens.Remove(refreshToken);
                 await _appContext.SaveChangesAsync();
                 return new AuthResponse()
                 {
