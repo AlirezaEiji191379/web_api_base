@@ -33,6 +33,14 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.NullVerification);
             }
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            if(unixTimeSeconds > verification.expirationTime)
+            {
+                _appContext.verifications.Remove(verification);
+                await _appContext.SaveChangesAsync();
+                return BadRequest(Errors.failedVerification);
+            }
 
             if (verification.usage != Usage.SignUp)
             {
@@ -82,7 +90,8 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.falseVerificationType);
             }
-
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
 
             if (verification.Resended == true)
             {
@@ -99,6 +108,7 @@ namespace Event_Creator.Controllers
             verification.VerificationCode = code;
             verification.Requested = 0;
             verification.Resended = true;
+            verification.expirationTime = unixTimeSeconds + 300;/////////
             _appContext.verifications.Update(verification);
             await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(user.Email,code);

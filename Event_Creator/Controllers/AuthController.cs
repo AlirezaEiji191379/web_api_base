@@ -41,6 +41,14 @@ namespace Event_Creator.Controllers
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Username.Equals(loginRequest.Username));
             Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(loginRequest.Username));
             if(verification!=null) return BadRequest(Information.okSignUp);
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            if (unixTimeSeconds > verification.expirationTime)
+            {
+                _appContext.verifications.Remove(verification);
+                await _appContext.SaveChangesAsync();
+                return BadRequest(Errors.expiredVerification);
+            }
             LockedAccount isLocked = null;
             FailedLogin failedLogin = null;
             if (user != null) isLocked = await _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == user.UserId);
@@ -52,19 +60,13 @@ namespace Event_Creator.Controllers
 
             if (isLocked != null)
             {
-                var now = DateTime.Now;
-                var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
                 if (isLocked.unlockedTime > unixTimeSeconds) return StatusCode(429, Errors.failedLoginLock);
                 else await Task.Run(() => _appContext.lockedAccounts.Remove(isLocked));
             }
 
-
-
             if (failedLogin != null && failedLogin.request == 5)
             {
                 _appContext.failedLogins.Remove(failedLogin);
-                var now = DateTime.Now;
-                var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
                 if (isLocked == null) await _appContext.lockedAccounts.AddAsync(new LockedAccount()
                 {
                     user = user,
@@ -106,7 +108,8 @@ namespace Event_Creator.Controllers
                 VerificationCode = code,
                 Requested = 0,
                 usage = Usage.Login,
-                User = user
+                User = user,
+                expirationTime=unixTimeSeconds+300////////////
             };
 
             await _appContext.verifications.AddAsync(newVerification);
@@ -130,12 +133,18 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.falseVerificationType);
             }
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            if (unixTimeSeconds > verification.expirationTime)
+            {
+                _appContext.verifications.Remove(verification);
+                await _appContext.SaveChangesAsync();
+                return BadRequest(Errors.expiredVerification);
+            }
             User user = null;
             if (verification.Requested == 5)
             {
                     user = await _appContext.Users.SingleAsync(a => a.Username == username);
-                    var now = DateTime.Now;
-                    var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
                     LockedAccount locked = new LockedAccount()
                     {
                         user = user,
@@ -205,14 +214,15 @@ namespace Event_Creator.Controllers
                 await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedLogin);
             }
-
-
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
 
             Random random = new Random();
             int code = random.Next(100000, 999999);
             verification.VerificationCode = code;
             verification.Requested = 0;
-             verification.Resended = true;
+            verification.Resended = true;
+            verification.expirationTime = unixTimeSeconds + 300; ////////
             _appContext.verifications.Update(verification);
             await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(user.Email, code);

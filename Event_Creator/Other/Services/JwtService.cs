@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+
 namespace Event_Creator.Other.Services
 {
     public class JwtService : IJwtService
@@ -57,9 +58,7 @@ namespace Event_Creator.Other.Services
 
         public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId)
         {
-            User user = await Task.Run(() => {
-                return _appContext.Users.SingleOrDefault(x => x.UserId == userId);
-            });
+            User user = await  _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             return new RefreshToken()
@@ -134,6 +133,17 @@ namespace Event_Creator.Other.Services
 
                 var jti = jwtToken.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
                 var utcExpiryDate = long.Parse(jwtToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
+                if(jti != refreshToken.JwtTokenId)
+                {
+                    return new AuthResponse()
+                    {
+                        JwtAccessToken = null,
+                        RefreshToken = null,
+                        statusCode = 401,
+                        success = false,
+                        ErrorList = Errors.InvalidJwtToken
+                    };
+                }
 
                 if (utcExpiryDate > unixTimeSeconds)
                 {

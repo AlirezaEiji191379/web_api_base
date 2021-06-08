@@ -14,6 +14,8 @@ namespace Event_Creator.models
         public int Requested { get; set; }
         public Usage usage { get; set; }
         public bool Resended { get; set;}
+        public long expirationTime { get; set; }
+
 
     }
 

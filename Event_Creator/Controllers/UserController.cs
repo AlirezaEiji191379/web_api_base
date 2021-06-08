@@ -41,11 +41,14 @@ namespace Event_Creator.Controllers
             Random random = new Random();
             int code = random.Next(100000, 999999);
             await _userService.sendEmailToUser(user.Email, code);
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             Verification verification = new Verification()
             {
                 User = user,
                 VerificationCode = code,
-                usage = Usage.SignUp
+                usage = Usage.SignUp,
+                expirationTime=unixTimeSeconds+300
             };
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();

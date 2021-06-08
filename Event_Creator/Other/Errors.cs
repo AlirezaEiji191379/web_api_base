@@ -87,5 +87,10 @@ namespace Event_Creator.Other
             get { return "کاربر گرامی مجددا اقدام به ورود نمایید"; }
         }
 
+        public static string expiredVerification
+        {
+            get { return "کاربر گرامی لطفا بعدا اقدام به ورود نمایید"; }
+        }
+
     }
 }
