@@ -53,16 +53,13 @@ namespace Event_Creator.Other.Services
 
 
 
-        public async Task sendEmailToUser(string email , int code)
+        public async Task sendEmailToUser(string email ,TextPart text)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Event_Creator Team Support", "alirezaeiji191379@gmail.com"));
             message.To.Add(new MailboxAddress("Event_Creator Client", email));
             message.Subject = "کد تایید";
-            message.Body = new TextPart("plain")
-            {
-                Text = $"verification Code is {code} and it is valid for 15 mins!"
-            };
+            message.Body = text;
             using (var client = new SmtpClient())
             {
                 client.Connect("smtp.gmail.com", 587, false);

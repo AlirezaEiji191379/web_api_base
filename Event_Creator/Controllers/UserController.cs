@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Event_Creator.models;
 using Event_Creator.Other.Interfaces;
 using Event_Creator.Other;
+using MimeKit;
 
 namespace Event_Creator.Controllers
 {
@@ -40,7 +41,11 @@ namespace Event_Creator.Controllers
             await _appContext.Users.AddAsync(user);
             Random random = new Random();
             int code = random.Next(100000, 999999);
-            await _userService.sendEmailToUser(user.Email, code);
+            TextPart text = new TextPart("plain")
+            {
+                Text = $"verification Code is {code} and it is valid for 15 mins!"
+            };
+            await _userService.sendEmailToUser(user.Email,text);
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             Verification verification = new Verification()

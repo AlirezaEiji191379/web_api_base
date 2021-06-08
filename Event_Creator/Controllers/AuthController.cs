@@ -16,6 +16,8 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
+
 namespace Event_Creator.Controllers
 {
     [Route("[controller]")]
@@ -102,7 +104,11 @@ namespace Event_Creator.Controllers
 
             Random random = new Random();
             int code = random.Next(100000, 999999);
-            await _userService.sendEmailToUser(user.Email, code);
+            TextPart text = new TextPart("plain")
+            {
+                Text = $"verification Code is {code} and it is valid for 15 mins!"
+            };
+            await _userService.sendEmailToUser(user.Email, text);
             Verification newVerification = new Verification()
             {
                 VerificationCode = code,
@@ -224,8 +230,12 @@ namespace Event_Creator.Controllers
             verification.Resended = true;
             verification.expirationTime = unixTimeSeconds + 300; ////////
             _appContext.verifications.Update(verification);
+            TextPart text = new TextPart("plain")
+            {
+                Text = $"verification Code is {code} and it is valid for 15 mins!"
+            };
             await _appContext.SaveChangesAsync();
-            await _userService.sendEmailToUser(user.Email, code);
+            await _userService.sendEmailToUser(user.Email, text);
             return Ok(Information.okResendCode);
         }
 
