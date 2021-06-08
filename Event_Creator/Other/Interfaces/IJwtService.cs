@@ -9,8 +9,8 @@ namespace Event_Creator.Other.Interfaces
     public interface IJwtService
     {
         string JwtTokenGenerator(long userId , string jti);
-        Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId);
-        Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest);
+        Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , string ip);
+        Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest , string ip);
 
     }
 }

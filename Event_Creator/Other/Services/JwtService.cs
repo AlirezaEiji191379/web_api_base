@@ -56,7 +56,7 @@ namespace Event_Creator.Other.Services
         }
 
 
-        public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId)
+        public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , string ip)
         {
             User user = await  _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             var now = DateTime.Now;
@@ -67,12 +67,13 @@ namespace Event_Creator.Other.Services
                 user = user,
                 expirationTime = unixTimeSeconds + 90,
                 Revoked = false,
-                Token = Guid.NewGuid().ToString()
+                Token = Guid.NewGuid().ToString(),
+                ipAddress = ip
             };
         }
 
 
-        public async Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest)
+        public async Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest, string ip)
         {
             RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.Token.Equals(refreshRequest.refreshToken));
             if (refreshToken != null) await _appContext.Entry(refreshToken).Reference(x => x.user).LoadAsync();
@@ -160,7 +161,7 @@ namespace Event_Creator.Other.Services
               
                 string jwtId = Guid.NewGuid().ToString();
                 string newJwtAccessToken = JwtTokenGenerator(refreshToken.user.UserId, jwtId);
-                RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId);
+                RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId,ip);
                 await _appContext.refreshTokens.AddAsync(newrefreshToken);
                 _appContext.refreshTokens.Remove(refreshToken);
                 await _appContext.SaveChangesAsync();

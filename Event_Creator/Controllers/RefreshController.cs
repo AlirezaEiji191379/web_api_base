@@ -21,7 +21,6 @@ namespace Event_Creator.Controllers
 
         private readonly IJwtService _jwtService;
         private readonly ApplicationContext _appContext;
-        private readonly JwtConfig _jwtConfig;
         public RefreshController(IJwtService jwtService , ApplicationContext applicationContext)
         {
             _jwtService = jwtService;
@@ -32,7 +31,7 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> GetRefreshToken([FromBody] RefreshRequest refreshRequest)
         {
-            AuthResponse authResponse = await _jwtService.RefreshToken(refreshRequest);
+            AuthResponse authResponse = await _jwtService.RefreshToken(refreshRequest, Request.HttpContext.Connection.RemoteIpAddress.ToString());
             return Ok(authResponse);
         }
 

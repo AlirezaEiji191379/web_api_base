@@ -14,5 +14,7 @@ namespace Event_Creator.models
         public string Token { get; set; }
         public bool Revoked { get; set; }
 
+        public string ipAddress { get; set; }
+
     }
 }

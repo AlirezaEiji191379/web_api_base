@@ -45,7 +45,7 @@ namespace Event_Creator.Controllers
             {
                 Text = $"verification Code is {code} and it is valid for 15 mins!"
             };
-            await _userService.sendEmailToUser(user.Email,text);
+            await _userService.sendEmailToUser(user.Email,text,"کد تایید ثبت نام");
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             Verification verification = new Verification()

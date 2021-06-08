@@ -108,7 +108,7 @@ namespace Event_Creator.Controllers
             {
                 Text = $"verification Code is {code} and it is valid for 15 mins!"
             };
-            await _userService.sendEmailToUser(user.Email, text);
+            await _userService.sendEmailToUser(user.Email, text,"کد تایید ورود");
             Verification newVerification = new Verification()
             {
                 VerificationCode = code,
@@ -127,7 +127,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{username}/{code}")]
         public async Task<IActionResult> Verify(string username, int code)
         {
-            LockedAccount isLocked = await Task.Run(() => { return _appContext.lockedAccounts.SingleOrDefault(x => x.user.Username == username); });
+            LockedAccount isLocked = await  _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
             Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(username));
 
             if (verification == null)
@@ -175,14 +175,22 @@ namespace Event_Creator.Controllers
                 return BadRequest(Errors.failedVerification);
             }
 
-
             user =await _appContext.Users.SingleAsync(a => a.Username == username);
+            RefreshToken refresh = await _appContext.refreshTokens.Include(x => x.user).FirstOrDefaultAsync(x => x.user.UserId == user.UserId);
+            if(refresh != null)
+            {
+                string ip = Request.HttpContext.Connection.RemoteIpAddress.ToString();
+                TextPart text = new TextPart("plain")
+                {
+                    Text = $" وارد حساب کاربری شما شده است در صورتی که فرد وارد شده شما نیستید لطفااتمام همه نشست ها را بزنید و پسورد خود را عوض کرده و دوباره وارد شوید  {ip}کاربر گرامی فرد جدیدی با آدرس آیپی "
+                };
+                Task.Run(() => { _userService.sendEmailToUser(user.Email, text, "هشدار امنیتی"); } );
+            }
             _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
             await _appContext.SaveChangesAsync();
-
             string jwtId = Guid.NewGuid().ToString();
             string jwtAccessToken = _jwtService.JwtTokenGenerator(user.UserId,jwtId);
-            RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId,user.UserId);
+            RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId,user.UserId, Request.HttpContext.Connection.RemoteIpAddress.ToString());
             await _appContext.refreshTokens.AddAsync(refreshToken);
             await _appContext.SaveChangesAsync();
             AuthResponse response = new AuthResponse()
@@ -191,7 +199,7 @@ namespace Event_Creator.Controllers
                 success=true,
                 RefreshToken=refreshToken.Token,
                 JwtAccessToken=jwtAccessToken,
-                statusCode=200
+                statusCode=200,
             };
             return Ok(response);
         }
@@ -232,10 +240,10 @@ namespace Event_Creator.Controllers
             _appContext.verifications.Update(verification);
             TextPart text = new TextPart("plain")
             {
-                Text = $"verification Code is {code} and it is valid for 15 mins!"
+                Text = $"verification Code is {code} and it is valid for 5 mins!"
             };
             await _appContext.SaveChangesAsync();
-            await _userService.sendEmailToUser(user.Email, text);
+            await _userService.sendEmailToUser(user.Email, text,"کد تایید ورود");
             return Ok(Information.okResendCode);
         }
 
@@ -247,6 +255,14 @@ namespace Event_Creator.Controllers
         {
 
             return Ok();
+        }
+
+
+        [Route("[action]")]
+        public string test()
+        {
+            var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
+            return remoteIpAddress.ToString();
         }
 
 

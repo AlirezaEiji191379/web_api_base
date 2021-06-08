@@ -10,7 +10,7 @@ namespace Event_Creator.Other.Interfaces
     public interface IUserService
     {
         Task<List<string>> checkUserDuplicate(User user);
-        Task sendEmailToUser(string email , TextPart text);
+        Task sendEmailToUser(string email , TextPart text , string subject);
 
         string Hash(string password);
         bool Check(string hash, string password);
