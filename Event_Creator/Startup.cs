@@ -64,14 +64,14 @@ namespace Event_Creator
                 SecurityKey rsa = services.BuildServiceProvider().GetRequiredService<RsaSecurityKey>();
                 jwt.TokenValidationParameters = new TokenValidationParameters
                 {
-                //ValidIssuer = jwtTokenConfig.Issuer,
-                //ValidAudience = jwtTokenConfig.Audience,
                 ValidateIssuerSigningKey = true,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
                     RequireSignedTokens=true,
                     RequireExpirationTime = true,
                     ValidateLifetime = true,
+                    ValidIssuer = jwtTokenConfig.Issuer,
+                    ValidAudience = jwtTokenConfig.Audience,
                     IssuerSigningKey = rsa,
                     //ClockSkew = TimeSpan.FromSeconds(30)
                 };

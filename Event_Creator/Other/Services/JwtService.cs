@@ -40,8 +40,8 @@ namespace Event_Creator.Other.Services
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             var jwt = new JwtSecurityToken(
-                   //audience: _jwtConfig.Issuer,
-                   //issuer: _jwtConfig.Issuer,
+                   audience: _jwtConfig.Issuer,
+                   issuer: _jwtConfig.Issuer,
                    claims: new Claim[]
                    {
                         new Claim(JwtRegisteredClaimNames.Iat, unixTimeSeconds.ToString(),ClaimValueTypes.Integer64),
@@ -121,8 +121,10 @@ namespace Event_Creator.Other.Services
             var parameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidIssuer = _jwtConfig.Issuer,
+                ValidAudience = _jwtConfig.Audience,
                 RequireSignedTokens = true,
                 RequireExpirationTime = true,
                 ValidateLifetime = false,
