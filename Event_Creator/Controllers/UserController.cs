@@ -8,6 +8,7 @@ using Event_Creator.models;
 using Event_Creator.Other.Interfaces;
 using Event_Creator.Other;
 using MimeKit;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Event_Creator.Controllers
 {
@@ -59,6 +60,7 @@ namespace Event_Creator.Controllers
             await _appContext.SaveChangesAsync();
             return Ok(Information.okSignUp);
         }
+
 
 
 

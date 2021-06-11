@@ -43,8 +43,6 @@ namespace Event_Creator
             services.AddSingleton(jwtTokenConfig);
 
             services.AddSingleton<RsaSecurityKey>(provider => {
-                // It's required to register the RSA key with depedency injection.
-                // If you don't do this, the RSA instance will be prematurely disposed.
                 RSA rsa = RSA.Create();
                 rsa.ImportRSAPublicKey(
                     source: Convert.FromBase64String(jwtTokenConfig.PublicKey),
@@ -81,12 +79,6 @@ namespace Event_Creator
             services.AddControllers();
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IJwtService, JwtService>();
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("IpPolicy",
-                    policy => policy.Requirements.Add(new IpRequirement()));
-            });
-            services.AddTransient<IAuthorizationHandler, IpCheckHandler>();
         }
 
 

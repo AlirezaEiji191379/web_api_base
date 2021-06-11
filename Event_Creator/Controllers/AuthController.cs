@@ -42,9 +42,9 @@ namespace Event_Creator.Controllers
         {
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Username.Equals(loginRequest.Username));
             Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(loginRequest.Username));
-            RefreshToken refreshToken = await _appContext.refreshTokens.Include(x => x.user).FirstOrDefaultAsync(x => x.user.Username.Equals(loginRequest.Username));
+            //RefreshToken refreshToken = await _appContext.refreshTokens.Include(x => x.user).FirstOrDefaultAsync(x => x.user.Username.Equals(loginRequest.Username));
             if(verification!=null) return BadRequest(Information.okSignUp);
-            if (refreshToken != null && refreshToken.ipAddress.Equals(Request.HttpContext.Connection.RemoteIpAddress.ToString())) return BadRequest(Errors.alreadySignedIn);
+            //if (refreshToken != null && refreshToken.ipAddress.Equals(Request.HttpContext.Connection.RemoteIpAddress.ToString())) return BadRequest(Errors.alreadySignedIn);
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             LockedAccount isLocked = null;
@@ -269,13 +269,37 @@ namespace Event_Creator.Controllers
             return Ok();
         }
 
+        [Route("[action]")]
+        [HttpDelete]
+        [Authorize]
+        public async Task<IActionResult> TerminateAllSessions()
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == long.Parse(uid));
+            await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
+            List<RefreshToken> allUserTokens = user.RefreshTokens.ToList();
+            for(int i = 0; i < allUserTokens.Count; i++)
+            {
+                allUserTokens[i].Revoked = true;
+                _appContext.refreshTokens.Update(allUserTokens[i]);
+            }
+            await _appContext.SaveChangesAsync();
+            return Ok();
+        }
+
+
 
         [Route("[action]")]
-       // [Authorize(Roles ="Admin")]
+        [Authorize(Roles ="User")]
         public string test()
         {
             var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
-            return userAgent.ToString();
+            return Request.HttpContext.Connection.RemoteIpAddress.ToString();
         }
 
 

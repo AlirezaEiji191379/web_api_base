@@ -25,25 +25,31 @@ namespace Event_Creator.Other.Services
         }
 
 
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, IpRequirement requirement)
+        protected  override Task HandleRequirementAsync(AuthorizationHandlerContext context, IpRequirement requirement)
         {
-            var jti = context.User.Claims.FirstOrDefault(x => x.Type=="jti");
-            if (jti == null)  context.Fail();
-            RefreshToken refreshToken = _appContext.refreshTokens.SingleOrDefault(x => x.JwtTokenId==jti.ToString());
-            if (refreshToken == null) context.Fail();
-            Task.Run(() => {
-            if (refreshToken != null)
-            {
-                _appContext.Entry(refreshToken).Reference(x => x.user).Load();
-                string ip = HttpContext.Connection.RemoteIpAddress.ToString();
-                    TextPart text = new TextPart("plain")
-                    {
-                        Text = $" وارد حساب کاربری شما شده است در صورتی که فرد وارد شده شما نیستید لطفااتمام همه نشست ها را بزنید و پسورد خود را عوض کرده و دوباره وارد شوید  {ip}کاربر گرامی فرد جدیدی با آدرس آیپی "
-                    };
-                    _userService.sendEmailToUser(refreshToken.user.Email,text,"هشدار امنیتی");
-               }
+            //string jti = context.User.Claims.FirstOrDefault(x => x.Type == "jti").Value;
+            //if (jti == null) context.Fail();
+            //RefreshToken refreshToken = _appContext.refreshTokens.Include(x => x.user).SingleOrDefault(x => x.JwtTokenId == jti);
+            //if (refreshToken == null) context.Fail();
 
-            });
+            //Task.Run(() =>
+            //{
+            //    if (refreshToken != null)
+            //    {
+            //        /// _appContext.Entry(refreshToken).Reference(x => x.user).Load();
+            //        Console.WriteLine(refreshToken.user.Email);
+            //        string ip = HttpContext.Connection.RemoteIpAddress.ToString();
+            //        if (refreshToken.ipAddress != ip) Console.WriteLine(refreshToken.user.Email);
+            //        TextPart text = new TextPart("plain")
+            //        {
+            //            Text = $" وارد حساب کاربری شما شده است در صورتی که فرد وارد شده شما نیستید لطفااتمام همه نشست ها را بزنید و پسورد خود را عوض کرده و دوباره وارد شوید  {ip}کاربر گرامی فرد جدیدی با آدرس آیپی "
+            //        };
+            //        _userService.sendEmailToUser(refreshToken.user.Email, text, "هشدار امنیتی");
+
+            //    }
+            //    return Task.CompletedTask;
+            //});
+            //context.Fail();
             return Task.CompletedTask;
         }
     }
