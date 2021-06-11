@@ -42,15 +42,11 @@ namespace Event_Creator.Controllers
         {
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Username.Equals(loginRequest.Username));
             Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(loginRequest.Username));
+            RefreshToken refreshToken = await _appContext.refreshTokens.Include(x => x.user).FirstOrDefaultAsync(x => x.user.Username.Equals(loginRequest.Username));
             if(verification!=null) return BadRequest(Information.okSignUp);
+            if (refreshToken != null && refreshToken.ipAddress.Equals(Request.HttpContext.Connection.RemoteIpAddress.ToString())) return BadRequest(Errors.alreadySignedIn);
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-            if (unixTimeSeconds > verification.expirationTime)
-            {
-                _appContext.verifications.Remove(verification);
-                await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.expiredVerification);
-            }
             LockedAccount isLocked = null;
             FailedLogin failedLogin = null;
             if (user != null) isLocked = await _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == user.UserId);
@@ -177,7 +173,7 @@ namespace Event_Creator.Controllers
 
             user =await _appContext.Users.SingleAsync(a => a.Username == username);
             RefreshToken refresh = await _appContext.refreshTokens.Include(x => x.user).FirstOrDefaultAsync(x => x.user.UserId == user.UserId);
-            if(refresh != null)
+            if(refresh != null && refresh.Revoked==false)
             {
                 string ip = Request.HttpContext.Connection.RemoteIpAddress.ToString();
                 TextPart text = new TextPart("plain")
@@ -189,7 +185,7 @@ namespace Event_Creator.Controllers
             _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
             await _appContext.SaveChangesAsync();
             string jwtId = Guid.NewGuid().ToString();
-            string jwtAccessToken = _jwtService.JwtTokenGenerator(user.UserId,jwtId);
+            string jwtAccessToken = await _jwtService.JwtTokenGenerator(user.UserId,jwtId);
             RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId,user.UserId, Request.HttpContext.Connection.RemoteIpAddress.ToString());
             await _appContext.refreshTokens.AddAsync(refreshToken);
             await _appContext.SaveChangesAsync();
@@ -250,19 +246,36 @@ namespace Event_Creator.Controllers
 
         
         [Route("[action]")]
+        [HttpDelete]
         [Authorize]
         public async Task<IActionResult> logout()
         {
-
+            var authorizationHeader =Request.Headers.Single(x => x.Key=="Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
+            RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
+            if (refreshToken == null) return BadRequest(Errors.NotFoundRefreshToken);
+            refreshToken.Revoked = true;
+            _appContext.refreshTokens.Update(refreshToken);
+            JwtBlackList blackList = new JwtBlackList()
+            {
+                jwtToken = stream
+            };
+            await _appContext.jwtBlackLists.AddAsync(blackList);
+            await _appContext.SaveChangesAsync();
             return Ok();
         }
 
 
         [Route("[action]")]
+       // [Authorize(Roles ="Admin")]
         public string test()
         {
-            var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
-            return remoteIpAddress.ToString();
+            var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
+            return userAgent.ToString();
         }
 
 

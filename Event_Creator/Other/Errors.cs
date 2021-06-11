@@ -92,5 +92,10 @@ namespace Event_Creator.Other
             get { return "کاربر گرامی لطفا بعدا اقدام به ورود نمایید"; }
         }
 
+        public static string alreadySignedIn
+        {
+            get { return "شما قبلا وارد شده اید"; }
+        }
+
     }
 }

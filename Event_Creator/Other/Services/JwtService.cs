@@ -24,7 +24,7 @@ namespace Event_Creator.Other.Services
             _rsaSecurityKey = rsa;
         }
 
-        public string JwtTokenGenerator(long userId, string jti)
+        public async Task<string> JwtTokenGenerator(long userId, string jti)
         {
             var privateKey = Convert.FromBase64String(_jwtConfig.PrivateKey);
             using RSA rsa = RSA.Create();
@@ -38,7 +38,7 @@ namespace Event_Creator.Other.Services
             { CryptoProviderFactory=cryptoProviderFactory};
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             var jwt = new JwtSecurityToken(
                    //audience: _jwtConfig.Issuer,
                    //issuer: _jwtConfig.Issuer,
@@ -46,9 +46,10 @@ namespace Event_Creator.Other.Services
                    {
                         new Claim(JwtRegisteredClaimNames.Iat, unixTimeSeconds.ToString(),ClaimValueTypes.Integer64),
                         new Claim(JwtRegisteredClaimNames.Jti,jti),
-                        new Claim("uid",userId.ToString())
+                        new Claim("uid",userId.ToString()),
+                        new Claim(ClaimTypes.Role,user.role.ToString())
                    },
-                   expires: now.AddSeconds(40),
+                   expires: now.AddSeconds(900),
                    signingCredentials: signingCredentials
             );
             string token = new JwtSecurityTokenHandler().WriteToken(jwt);
@@ -65,7 +66,7 @@ namespace Event_Creator.Other.Services
             {
                 JwtTokenId = jwtId,
                 user = user,
-                expirationTime = unixTimeSeconds + 90,
+                expirationTime = unixTimeSeconds + 604800,
                 Revoked = false,
                 Token = Guid.NewGuid().ToString(),
                 ipAddress = ip
@@ -160,7 +161,7 @@ namespace Event_Creator.Other.Services
 
               
                 string jwtId = Guid.NewGuid().ToString();
-                string newJwtAccessToken = JwtTokenGenerator(refreshToken.user.UserId, jwtId);
+                string newJwtAccessToken =await JwtTokenGenerator(refreshToken.user.UserId, jwtId);
                 RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId,ip);
                 await _appContext.refreshTokens.AddAsync(newrefreshToken);
                 _appContext.refreshTokens.Remove(refreshToken);

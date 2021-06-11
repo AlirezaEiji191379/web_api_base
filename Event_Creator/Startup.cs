@@ -23,6 +23,7 @@ using Event_Creator.Other.Interfaces;
 using Event_Creator.Other.Services;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Event_Creator
 {
@@ -73,13 +74,19 @@ namespace Event_Creator
                     ValidateLifetime = true,
                     IssuerSigningKey = rsa,
                     //ClockSkew = TimeSpan.FromSeconds(30)
-                   // IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
             });
+            services.AddHttpContextAccessor();
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));
             services.AddControllers();
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("IpPolicy",
+                    policy => policy.Requirements.Add(new IpRequirement()));
+            });
+            services.AddTransient<IAuthorizationHandler, IpCheckHandler>();
         }
 
 

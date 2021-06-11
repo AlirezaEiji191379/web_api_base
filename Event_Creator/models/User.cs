@@ -36,6 +36,7 @@ namespace Event_Creator.models
 
         public Role role { get; set; }
 
+        public ICollection<RefreshToken> RefreshTokens { get; set; } 
     }
     public enum Role
     {
