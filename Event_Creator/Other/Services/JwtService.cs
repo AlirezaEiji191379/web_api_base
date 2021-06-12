@@ -61,6 +61,8 @@ namespace Event_Creator.Other.Services
         public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , HttpContext httpContext)
         {
             User user = await  _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
+            await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
+            int priority = user.RefreshTokens.Count + 1;
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             return new RefreshToken()
@@ -71,7 +73,8 @@ namespace Event_Creator.Other.Services
                 Revoked = false,
                 Token = Guid.NewGuid().ToString(),
                 ipAddress = httpContext.Connection.RemoteIpAddress.ToString(),
-                UserAgent = httpContext.Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent")).ToString()
+                UserAgent = httpContext.Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent")).ToString(),
+                Priority = priority
             };
         }
 

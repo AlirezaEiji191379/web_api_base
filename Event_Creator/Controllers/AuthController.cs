@@ -272,21 +272,23 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         [HttpDelete]
         [Authorize]
-        public async Task<IActionResult> TerminateAllSessions()
+        public async Task<IActionResult> terminateAllSessions()
         {
             var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
             var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
             var handler = new JwtSecurityTokenHandler();
             var jsonToken = handler.ReadToken(stream);
             var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == long.Parse(uid));
+            var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
+            RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId == jti.ToString());
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(refreshToken.user.UserId));
             await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
-            List<RefreshToken> allUserTokens = user.RefreshTokens.ToList();
-            for(int i = 0; i < allUserTokens.Count; i++)
+            List<RefreshToken> allUserTokens = user.RefreshTokens.ToList().FindAll(x => x.Priority > refreshToken.Priority);
+            for (int i = 0; i < allUserTokens.Count; i++)
             {
-                await _appContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
-                    jwtToken=allUserTokens[i].JwtTokenId
+                await _appContext.jwtBlackLists.AddAsync(new JwtBlackList()
+                {
+                    jwtToken = allUserTokens[i].JwtTokenId
                 });
                 allUserTokens[i].Revoked = true;
                 _appContext.refreshTokens.Update(allUserTokens[i]);
@@ -295,6 +297,34 @@ namespace Event_Creator.Controllers
             return Ok();
         }
 
+
+
+        [Route("[action]/{priority}")]
+        [HttpDelete]
+        [Authorize]
+        public async Task<IActionResult> TermianteOneSession(int priority)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
+            RefreshToken requester = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
+            if(requester.Priority > priority)
+            {
+                return Forbid("شما به دلایل امنیتی اجازه ندارید مابقی نشست هایی که قبل از شما ورود نموده اند را حذف کنید");
+            }
+            await _appContext.Entry(requester).Reference(x => x.user).LoadAsync();
+            RefreshToken finished = await _appContext.refreshTokens.Where(x => x.user.UserId==requester.user.UserId && x.Priority==priority).SingleOrDefaultAsync();
+            await _appContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
+                jwtToken=finished.JwtTokenId    
+            });
+            finished.Revoked = true;
+            _appContext.refreshTokens.Update(finished);
+            await _appContext.SaveChangesAsync();
+            return Ok();
+        }
 
 
         [Route("[action]")]

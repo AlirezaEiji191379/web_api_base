@@ -18,5 +18,7 @@ namespace Event_Creator.models
 
         public string UserAgent {get;set;}
 
+        public int Priority { get; set; }
+
     }
 }
