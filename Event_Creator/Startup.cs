@@ -24,7 +24,7 @@ using Event_Creator.Other.Services;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.AspNetCore.Authorization;
-
+using Event_Creator.Other.MiddleWare;
 namespace Event_Creator
 {
     public class Startup
@@ -94,7 +94,7 @@ namespace Event_Creator
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseMiddleware<SecurityMiddleWare>();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

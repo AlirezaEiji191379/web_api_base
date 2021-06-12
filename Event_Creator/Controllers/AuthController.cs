@@ -186,7 +186,7 @@ namespace Event_Creator.Controllers
             await _appContext.SaveChangesAsync();
             string jwtId = Guid.NewGuid().ToString();
             string jwtAccessToken = await _jwtService.JwtTokenGenerator(user.UserId,jwtId);
-            RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId,user.UserId, Request.HttpContext.Connection.RemoteIpAddress.ToString());
+            RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId,user.UserId, HttpContext);
             await _appContext.refreshTokens.AddAsync(refreshToken);
             await _appContext.SaveChangesAsync();
             AuthResponse response = new AuthResponse()
@@ -262,7 +262,7 @@ namespace Event_Creator.Controllers
             _appContext.refreshTokens.Update(refreshToken);
             JwtBlackList blackList = new JwtBlackList()
             {
-                jwtToken = stream
+                jwtToken = jti
             };
             await _appContext.jwtBlackLists.AddAsync(blackList);
             await _appContext.SaveChangesAsync();
@@ -285,6 +285,9 @@ namespace Event_Creator.Controllers
             List<RefreshToken> allUserTokens = user.RefreshTokens.ToList();
             for(int i = 0; i < allUserTokens.Count; i++)
             {
+                await _appContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
+                    jwtToken=allUserTokens[i].JwtTokenId
+                });
                 allUserTokens[i].Revoked = true;
                 _appContext.refreshTokens.Update(allUserTokens[i]);
             }

@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace Event_Creator.Other.Services
 {
@@ -57,7 +58,7 @@ namespace Event_Creator.Other.Services
         }
 
 
-        public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , string ip)
+        public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , HttpContext httpContext)
         {
             User user = await  _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             var now = DateTime.Now;
@@ -69,12 +70,13 @@ namespace Event_Creator.Other.Services
                 expirationTime = unixTimeSeconds + 604800,
                 Revoked = false,
                 Token = Guid.NewGuid().ToString(),
-                ipAddress = ip
+                ipAddress = httpContext.Connection.RemoteIpAddress.ToString(),
+                UserAgent = httpContext.Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent")).ToString()
             };
         }
 
 
-        public async Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest, string ip)
+        public async Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest, HttpContext httpContext)
         {
             RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.Token.Equals(refreshRequest.refreshToken));
             if (refreshToken != null) await _appContext.Entry(refreshToken).Reference(x => x.user).LoadAsync();
@@ -164,7 +166,7 @@ namespace Event_Creator.Other.Services
               
                 string jwtId = Guid.NewGuid().ToString();
                 string newJwtAccessToken =await JwtTokenGenerator(refreshToken.user.UserId, jwtId);
-                RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId,ip);
+                RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId,httpContext);
                 await _appContext.refreshTokens.AddAsync(newrefreshToken);
                 _appContext.refreshTokens.Remove(refreshToken);
                 await _appContext.SaveChangesAsync();

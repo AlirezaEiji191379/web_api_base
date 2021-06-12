@@ -31,7 +31,7 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> GetRefreshToken([FromBody] RefreshRequest refreshRequest)
         {
-            AuthResponse authResponse = await _jwtService.RefreshToken(refreshRequest, Request.HttpContext.Connection.RemoteIpAddress.ToString());
+            AuthResponse authResponse = await _jwtService.RefreshToken(refreshRequest,HttpContext);
             return Ok(authResponse);
         }
 
