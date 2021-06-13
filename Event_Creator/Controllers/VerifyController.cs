@@ -176,10 +176,10 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.falseVerificationType);
             }
-
+            ChangePassword change = null;
             if (verification.Requested == 3)
             {
-                ChangePassword change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
                 _appContext.verifications.Remove(verification);
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
@@ -190,7 +190,7 @@ namespace Event_Creator.Controllers
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             if (unixTimeSeconds > verification.expirationTime)
             {
-                ChangePassword change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username)); 
+                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username)); 
                 _appContext.verifications.Remove(verification);
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
@@ -215,6 +215,9 @@ namespace Event_Creator.Controllers
                 allUserTokens[i].Revoked = true;
                 _appContext.refreshTokens.Update(allUserTokens[i]);
             }
+            change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+            change.user.Password = _userService.Hash(change.NewPassword);
+            _appContext.Users.Update(change.user);
             await _appContext.SaveChangesAsync();
             return Ok(Information.SuccessChangePassword);
         }
