@@ -166,8 +166,8 @@ namespace Event_Creator.Controllers
                     jwtToken = allUserTokens[i].JwtTokenId
                 });
                 allUserTokens[i].Revoked = true;
-                _appContext.refreshTokens.Update(allUserTokens[i]);
             }
+            _appContext.refreshTokens.UpdateRange(allUserTokens);
             await _appContext.SaveChangesAsync();
             return Ok();
         }

@@ -102,5 +102,10 @@ namespace Event_Creator.Other
             get { return "رمز عبور اشتباه است"; }
         }
 
+        public static string NullEmailResetPassword
+        {
+            get { return "این ایمیل در سیستم وجود ندارد"; }
+        }
+
     }
 }

@@ -23,7 +23,8 @@ namespace Event_Creator.models
     {
         Login,
         SignUp,
-        ChangePassword
+        ChangePassword,
+        ResetPassword
     }
 
 }

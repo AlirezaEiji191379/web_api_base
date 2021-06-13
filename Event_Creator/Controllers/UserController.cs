@@ -110,11 +110,38 @@ namespace Event_Creator.Controllers
             await _appContext.changePassword.AddAsync(change);
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
+            await _userService.sendEmailToUser(user.Email, text, "هشدار امنیتی");
             return Ok();
         }
 
 
-
+        [Route("[action]/email")]
+        public async Task<IActionResult> ForgotPassword(string email)
+        {
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Email.Equals(email));
+            if (user == null) return BadRequest(Errors.NullEmailResetPassword);
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            Random random = new Random();
+            int code = random.Next(100000, 999999);
+            Verification verification = new Verification()
+            {
+                User = user,
+                expirationTime = unixTimeSeconds + 300,
+                Requested=0,
+                Resended=true,
+                usage=Usage.ResetPassword,
+                VerificationCode =code 
+            };
+            TextPart text = new TextPart("plain")
+            {
+                Text = $"کاربر گرامی کد تایید شما برای فراموشی رمز عبور {code} است به هیچ وجه آن را در دسترس کسی قرار ندهید. "
+            };
+            await _appContext.verifications.AddAsync(verification);
+            await _userService.sendEmailToUser(user.Email,text, "هشدار امنیتی");
+            await _appContext.SaveChangesAsync();
+            return Ok(Information.ResetPassword);
+        }
 
 
 

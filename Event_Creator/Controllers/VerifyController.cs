@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using MimeKit;
 using Microsoft.AspNetCore.Authorization;
 using Event_Creator.models.Security;
+using System.Security.Cryptography;
 
 namespace Event_Creator.Controllers
 {
@@ -177,7 +178,7 @@ namespace Event_Creator.Controllers
                 return BadRequest(Errors.falseVerificationType);
             }
             ChangePassword change = null;
-            if (verification.Requested == 3)
+            if (verification.Requested == 2)
             {
                 change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
                 _appContext.verifications.Remove(verification);
@@ -213,13 +214,62 @@ namespace Event_Creator.Controllers
                     jwtToken = allUserTokens[i].JwtTokenId
                 });
                 allUserTokens[i].Revoked = true;
-                _appContext.refreshTokens.Update(allUserTokens[i]);
+                //_appContext.refreshTokens.Update(allUserTokens[i]);
             }
+            _appContext.refreshTokens.UpdateRange(allUserTokens);
             change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
             change.user.Password = _userService.Hash(change.NewPassword);
             _appContext.Users.Update(change.user);
             await _appContext.SaveChangesAsync();
             return Ok(Information.SuccessChangePassword);
+        }
+
+
+        [Route("[action]/{email}/{code}")]
+        public async Task<IActionResult> VerifyForgetPassword(string email ,int code)
+        {
+            Verification verification = await _appContext.verifications.Include(x => x.User).SingleOrDefaultAsync(x => x.User.Email.Equals(email));
+            if(verification == null)
+            {
+                return BadRequest(Errors.NullVerification);
+            }
+            if (verification.usage != Usage.ResetPassword)
+            {
+                return BadRequest(Errors.falseVerificationType);
+            }
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            if (unixTimeSeconds > verification.expirationTime)
+            {
+                _appContext.verifications.Remove(verification);
+                await _appContext.SaveChangesAsync();
+                return BadRequest(Errors.expiredVerification);
+            }
+            if (verification.Requested == 1)
+            {
+                _appContext.verifications.Remove(verification);
+                await _appContext.SaveChangesAsync();
+                return BadRequest(Errors.exceedVerification);
+            }
+            if (verification.VerificationCode != code)
+            {
+                verification.Requested++;
+                _appContext.verifications.Update(verification);
+                await _appContext.SaveChangesAsync();
+                return BadRequest(Errors.failedVerification);
+            }
+            byte[] rgb = new byte[9];
+            RNGCryptoServiceProvider rngCrypt = new RNGCryptoServiceProvider();
+            rngCrypt.GetBytes(rgb);
+            string newPassword = Convert.ToBase64String(rgb);
+            verification.User.Password = _userService.Hash(newPassword);
+            _appContext.Users.Update(verification.User);
+            await _appContext.SaveChangesAsync();
+            TextPart text = new TextPart("plain") {
+                Text = $"رمز عبور جدید شما {newPassword} میباشد. "
+            };
+            await _userService.sendEmailToUser(verification.User.Email,text,"رمز عبور جدید");
+            return Ok(Information.ResetPassword);
         }
 
 
