@@ -22,7 +22,8 @@ namespace Event_Creator.models
     public enum Usage
     {
         Login,
-        SignUp
+        SignUp,
+        ChangePassword
     }
 
 }

@@ -96,6 +96,11 @@ namespace Event_Creator.Other
         {
             get { return "شما قبلا وارد شده اید"; }
         }
+        
+        public static string PasswordChangeFailed
+        {
+            get { return "رمز عبور اشتباه است"; }
+        }
 
     }
 }

@@ -9,6 +9,9 @@ using Event_Creator.Other.Interfaces;
 using Event_Creator.Other;
 using MimeKit;
 using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.EntityFrameworkCore;
+using Event_Creator.models.Security;
 
 namespace Event_Creator.Controllers
 {
@@ -60,6 +63,56 @@ namespace Event_Creator.Controllers
             await _appContext.SaveChangesAsync();
             return Ok(Information.okSignUp);
         }
+
+
+        [Authorize]
+        [Route("[action]")]
+        public async Task<IActionResult> changePassword([FromBody] PasswodChangeRequest changeRequest)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(uid.ToString()));
+            TextPart text = null;
+            if (_userService.Check(user.Password , changeRequest.oldPassword) == false)
+            {
+                 text = new TextPart("Plain")
+                {
+                    Text = "کاربر گرامی شخصی قصد تغییر رمز عبور حساب کاربری شما را دارد درصورتی که آن شخص شما نیستید رمز عبور خود را تغییر دهید ."
+                };
+                await _userService.sendEmailToUser(user.Email,text,"هشدار امنیتی");
+                return Forbid(Errors.PasswordChangeFailed);
+            }
+            Random random = new Random();
+            int code = random.Next(100000, 999999);
+            text = new TextPart("plain")
+            {
+                Text = "این کد تایید 15 دقیقه فرصت دارد"+$"  میباشد در صورتی که شما در حال تغییر رمز عبور خود نمیباشید حتما تمامی نشست ها را حذف کرده و رمز عبور خود را عوض کرده و بار دیگر وارد شوید {code} کاربر گرامی کد تایید شما "
+            };
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            Verification verification = new Verification()
+            {
+                expirationTime=unixTimeSeconds+300,
+                Requested=0,
+                Resended=true,
+                usage = Usage.ChangePassword,
+                User = user,
+                VerificationCode = code
+            };
+            ChangePassword change = new ChangePassword() { 
+                user=user,
+                NewPassword=changeRequest.newPassword
+            };
+            await _appContext.changePassword.AddAsync(change);
+            await _appContext.verifications.AddAsync(verification);
+            await _appContext.SaveChangesAsync();
+            return Ok();
+        }
+
 
 
 

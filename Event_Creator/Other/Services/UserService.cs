@@ -117,16 +117,6 @@ namespace Event_Creator.Other.Services
             }
         }
 
-        public async Task ChangePassword()
-        {
-
-        }
-
-        public async Task PasswordForGotten()
-        {
-
-        }
-
 
 
 

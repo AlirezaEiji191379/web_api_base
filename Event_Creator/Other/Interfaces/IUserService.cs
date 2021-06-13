@@ -15,8 +15,6 @@ namespace Event_Creator.Other.Interfaces
         string Hash(string password);
         bool Check(string hash, string password);
 
-        Task ChangePassword();
-        Task PasswordForGotten();
 
     }
 }
