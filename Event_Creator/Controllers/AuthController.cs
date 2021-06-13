@@ -203,6 +203,30 @@ namespace Event_Creator.Controllers
 
 
         [Route("[action]")]
+        [Authorize]
+        public async Task<List<DeviceResponse>> getAllInDevices()
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(uid));
+            await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
+            List<RefreshToken> allUserToken = user.RefreshTokens.ToList();
+            List<DeviceResponse> allDevices = new List<DeviceResponse>();
+            foreach (RefreshToken refresh in allUserToken)
+            {
+                allDevices.Add(new DeviceResponse() { 
+                    priority= refresh.Priority,
+                    UserAgent = refresh.UserAgent
+                });
+            }
+            return allDevices;
+        }
+
+        [Route("[action]")]
         [Authorize(Roles ="User")]
         public string test()
         {
