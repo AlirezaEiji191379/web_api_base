@@ -266,6 +266,7 @@ namespace Event_Creator.Controllers
             rngCrypt.GetBytes(rgb);
             string newPassword = Convert.ToBase64String(rgb);
             verification.User.Password = _userService.Hash(newPassword);
+            _appContext.verifications.Remove(verification);
             _appContext.Users.Update(verification.User);
             await _appContext.SaveChangesAsync();
             TextPart text = new TextPart("plain") {

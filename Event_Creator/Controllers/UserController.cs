@@ -119,13 +119,13 @@ namespace Event_Creator.Controllers
         }
 
 
-        [Route("[action]/email")]
-        public async Task<IActionResult> ForgotPassword(string email)
+        [Route("[action]/{email}")]
+        public async Task<IActionResult> ForgetPassword(string email)
         {
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Email.Equals(email));
+            if (user == null) return BadRequest(Errors.NullEmailResetPassword);
             Verification verification1 = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId == user.UserId && x.usage == Usage.ResetPassword).SingleOrDefaultAsync();
             if (verification1 != null) return BadRequest("ایمیل قبلا برای شما ارسال شده است");
-            if (user == null) return BadRequest(Errors.NullEmailResetPassword);
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             Random random = new Random();
