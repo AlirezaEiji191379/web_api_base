@@ -310,7 +310,7 @@ namespace Event_Creator.Controllers
             verification.VerificationCode = code;
             verification.Requested = 0;
             verification.Resended = true;
-            verification.expirationTime = unixTimeSeconds + 300;/////////
+            verification.expirationTime = unixTimeSeconds + 900;/////////
             _appContext.verifications.Update(verification);
             TextPart text = new TextPart("plain")
             {
@@ -351,7 +351,7 @@ namespace Event_Creator.Controllers
             verification.VerificationCode = code;
             verification.Requested = 0;
             verification.Resended = true;
-            verification.expirationTime = unixTimeSeconds + 300; ////////
+            verification.expirationTime = unixTimeSeconds + 900; ////////
             _appContext.verifications.Update(verification);
             TextPart text = new TextPart("plain")
             {

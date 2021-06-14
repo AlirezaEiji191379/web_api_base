@@ -57,7 +57,7 @@ namespace Event_Creator.Controllers
                 User = user,
                 VerificationCode = code,
                 usage = Usage.SignUp,
-                expirationTime=unixTimeSeconds+300
+                expirationTime=unixTimeSeconds+900
             };
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
@@ -100,7 +100,7 @@ namespace Event_Creator.Controllers
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             Verification verification = new Verification()
             {
-                expirationTime=unixTimeSeconds+300,
+                expirationTime=unixTimeSeconds+900,
                 Requested=0,
                 Resended=true,
                 usage = Usage.ChangePassword,
@@ -133,7 +133,7 @@ namespace Event_Creator.Controllers
             Verification verification = new Verification()
             {
                 User = user,
-                expirationTime = unixTimeSeconds + 300,/////////////////
+                expirationTime = unixTimeSeconds + 900,/////////////////
                 Requested=0,
                 Resended=true,
                 usage=Usage.ResetPassword,

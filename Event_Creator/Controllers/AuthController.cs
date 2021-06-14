@@ -69,7 +69,7 @@ namespace Event_Creator.Controllers
                 await _appContext.lockedAccounts.AddAsync(new LockedAccount()
                 {
                     user = user,
-                    unlockedTime = unixTimeSeconds + 30/////////////////////////////////////////
+                    unlockedTime = unixTimeSeconds + 300/////////////////////////////////////////
                 });
                  await _appContext.SaveChangesAsync();
                 return StatusCode(429, Errors.failedLoginLock);
@@ -104,7 +104,7 @@ namespace Event_Creator.Controllers
                 Requested = 0,
                 usage = Usage.Login,
                 User = user,
-                expirationTime=unixTimeSeconds+300////////////
+                expirationTime=unixTimeSeconds+300
             };
             if (failedLogin != null) _appContext.failedLogins.Remove(failedLogin);
             await _appContext.verifications.AddAsync(newVerification);
