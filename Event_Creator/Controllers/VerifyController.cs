@@ -30,7 +30,7 @@ namespace Event_Creator.Controllers
         }
 
 
-
+        // checked
         [Route("[action]/{username}/{code}")]
         public async Task<IActionResult> VerifySignUp(string username, int code)
         {
@@ -40,19 +40,21 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.NullVerification);
             }
+
+            if (verification.usage != Usage.SignUp)
+            {
+                return BadRequest(Errors.falseVerificationType);
+            }
+
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-            if(unixTimeSeconds > verification.expirationTime)
+            if (unixTimeSeconds > verification.expirationTime)
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.failedVerification);
             }
 
-            if (verification.usage != Usage.SignUp)
-            {
-                return BadRequest(Errors.falseVerificationType);
-            }
             User user = null;
             if (verification.Requested == 5)
             {
