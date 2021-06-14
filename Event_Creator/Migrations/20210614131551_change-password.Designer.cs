@@ -4,14 +4,16 @@ using Event_Creator.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Event_Creator.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210614131551_change-password")]
+    partial class changepassword
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -126,12 +128,7 @@ namespace Event_Creator.Migrations
                     b.Property<string>("NewPassword")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long?>("UserId")
-                        .HasColumnType("bigint");
-
                     b.HasKey("PasswordChangeId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("changePassword");
                 });
@@ -244,15 +241,6 @@ namespace Event_Creator.Migrations
                 });
 
             modelBuilder.Entity("Event_Creator.models.Security.FailedLogin", b =>
-                {
-                    b.HasOne("Event_Creator.models.User", "user")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("user");
-                });
-
-            modelBuilder.Entity("Event_Creator.models.Security.PasswordChange", b =>
                 {
                     b.HasOne("Event_Creator.models.User", "user")
                         .WithMany()

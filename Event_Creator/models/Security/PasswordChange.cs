@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 
 namespace Event_Creator.models.Security
 {
-    public class ChangePassword
+    public class PasswordChange
     {
-        public long ChangePasswordId { get; set; }
+        public long PasswordChangeId { get; set; }
+
+        public User user { get; set; }
         public string NewPassword { get; set; }
-        public User user;
     }
 }

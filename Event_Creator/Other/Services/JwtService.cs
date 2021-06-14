@@ -50,7 +50,7 @@ namespace Event_Creator.Other.Services
                         new Claim("uid",userId.ToString()),
                         new Claim(ClaimTypes.Role,user.role.ToString())
                    },
-                   expires: now.AddSeconds(120),/////////////////
+                   expires: now.AddSeconds(3600),/////////////////
                    signingCredentials: signingCredentials
             );
             string token = new JwtSecurityTokenHandler().WriteToken(jwt);
@@ -71,7 +71,7 @@ namespace Event_Creator.Other.Services
             {
                 JwtTokenId = jwtId,
                 user = user,
-                expirationTime = unixTimeSeconds + 900,//////////////////////
+                expirationTime = unixTimeSeconds + 640800,//////////////////////
                 Revoked = false,
                 Token = Guid.NewGuid().ToString(),
                 ipAddress = httpContext.Connection.RemoteIpAddress.ToString(),

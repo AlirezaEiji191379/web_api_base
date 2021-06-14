@@ -34,7 +34,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{username}/{code}")]
         public async Task<IActionResult> VerifySignUp(string username, int code)
         {
-            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(a => a.User.Username == username);
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(a => a.User.Username == username && a.usage == Usage.SignUp).FirstOrDefaultAsync();
 
             if (verification == null)
             {
@@ -61,7 +61,7 @@ namespace Event_Creator.Controllers
 
              user = await _appContext.Users.SingleAsync(a => a.Username == username);
              _appContext.Users.Remove(user);
-             _appContext.verifications.Remove(await _appContext.verifications.Include(x => x.User).SingleAsync(a => a.User.UserId == user.UserId));
+             _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
              return BadRequest(Errors.exceedVerification);
             }
@@ -77,7 +77,7 @@ namespace Event_Creator.Controllers
               user =await _appContext.Users.SingleAsync(a => a.Username == username);
               user.Enable = true;
              _appContext.Users.Update(user);
-             _appContext.verifications.Remove(await _appContext.verifications.Include(x => x.User).SingleAsync(a => a.User.UserId == user.UserId));
+             _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
 
             return Ok(Information.okVerifySignUp);
@@ -88,7 +88,7 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> VerifyLogin(string username, int code)
         {
             LockedAccount isLocked = await _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
-            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(username));
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(username) && x.usage == Usage.Login).FirstOrDefaultAsync();
 
             if (verification == null)
             {
@@ -122,7 +122,7 @@ namespace Event_Creator.Controllers
                     isLocked.unlockedTime = unixTimeSeconds + 300;
                     _appContext.lockedAccounts.Update(isLocked); ////////////////////////////////////////////
                 }
-                _appContext.verifications.Remove(await _appContext.verifications.FirstAsync(a => a.User.UserId == user.UserId));
+                _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedVerification);
             }
@@ -146,7 +146,7 @@ namespace Event_Creator.Controllers
                 };
                 Task.Run(() => { _userService.sendEmailToUser(user.Email, text, "هشدار امنیتی"); });
             }
-            _appContext.verifications.Remove(_appContext.verifications.Single(a => a.User.UserId == user.UserId));
+            _appContext.verifications.Remove(verification);
             await _appContext.SaveChangesAsync();
             string jwtId = Guid.NewGuid().ToString();
             string jwtAccessToken = await _jwtService.JwtTokenGenerator(user.UserId, jwtId);
@@ -169,7 +169,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{username}/{code}")]
         public async Task<IActionResult> VerifyChangePassword(string username, int code)
         {
-            Verification verification = await _appContext.verifications.Include(x => x.User).SingleOrDefaultAsync(x => x.User.Username.Equals(username));
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(username) && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
             if (verification == null)
             {
                 return BadRequest(Errors.NullVerification);
@@ -179,7 +179,17 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest(Errors.falseVerificationType);
             }
-            ChangePassword change = null;
+            PasswordChange change = null;
+            var now = DateTime.Now;
+            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            if (unixTimeSeconds > verification.expirationTime)
+            {
+                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+                _appContext.verifications.Remove(verification);
+                _appContext.changePassword.Remove(change);
+                await _appContext.SaveChangesAsync();
+                return BadRequest(Errors.expiredVerification);
+            }
             if (verification.Requested == 2)
             {
                 change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
@@ -187,17 +197,6 @@ namespace Event_Creator.Controllers
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedVerification);
-            }
-
-            var now = DateTime.Now;
-            var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
-            if (unixTimeSeconds > verification.expirationTime)
-            {
-                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username)); 
-                _appContext.verifications.Remove(verification);
-                _appContext.changePassword.Remove(change);
-                await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.expiredVerification);
             }
 
             if (verification.VerificationCode != code)
@@ -220,6 +219,8 @@ namespace Event_Creator.Controllers
             }
             _appContext.refreshTokens.UpdateRange(allUserTokens);
             change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+            _appContext.changePassword.Remove(change);
+            _appContext.verifications.Remove(verification);
             change.user.Password = _userService.Hash(change.NewPassword);
             _appContext.Users.Update(change.user);
             await _appContext.SaveChangesAsync();
@@ -230,7 +231,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{email}/{code}")]
         public async Task<IActionResult> VerifyForgetPassword(string email ,int code)
         {
-            Verification verification = await _appContext.verifications.Include(x => x.User).SingleOrDefaultAsync(x => x.User.Email.Equals(email));
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Email.Equals(email) && x.usage ==Usage.ResetPassword).SingleOrDefaultAsync();
             if(verification == null)
             {
                 return BadRequest(Errors.NullVerification);
@@ -280,7 +281,7 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> ResendCodeSignUp(string username)
         {
             User user = null;
-            Verification verification = await  _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(a => a.User.Username == username);
+            Verification verification = await  _appContext.verifications.Include(x => x.User).Where(a => a.User.Username == username && a.usage==Usage.SignUp).FirstOrDefaultAsync();
             if (verification == null)
             {
                 return BadRequest(Errors.NullVerification);
@@ -324,7 +325,7 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> ResendCodeLogin(string username)
         {
             User user = null;
-            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(username));
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(username) && x.usage==Usage.Login).FirstOrDefaultAsync();
             if (verification == null)
             {
                 return BadRequest(Errors.NullVerification);

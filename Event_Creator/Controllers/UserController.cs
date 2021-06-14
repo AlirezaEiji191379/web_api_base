@@ -67,6 +67,7 @@ namespace Event_Creator.Controllers
 
         [Authorize]
         [Route("[action]")]
+        [HttpPost]
         public async Task<IActionResult> changePassword([FromBody] PasswodChangeRequest changeRequest)
         {
             var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
@@ -84,8 +85,11 @@ namespace Event_Creator.Controllers
                     Text = "کاربر گرامی شخصی قصد تغییر رمز عبور حساب کاربری شما را دارد درصورتی که آن شخص شما نیستید رمز عبور خود را تغییر دهید ."
                 };
                 await _userService.sendEmailToUser(user.Email,text,"هشدار امنیتی");
-                return Forbid(Errors.PasswordChangeFailed);
+                return StatusCode(403,Errors.PasswordChangeFailed);
             }
+            if (changeRequest.newPassword.Length < 6 || changeRequest.newPassword.Length > 20) return BadRequest("رمز عبور باید از 6 حرف بیشتر و از 20 حرف کمتر باشدs");
+            Verification verification1 = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId == user.UserId && x.usage==Usage.ChangePassword).SingleOrDefaultAsync();
+            if (verification1 != null) return BadRequest("ایمیل قبلا برای شما ارسال شده است");
             Random random = new Random();
             int code = random.Next(100000, 999999);
             text = new TextPart("plain")
@@ -103,7 +107,7 @@ namespace Event_Creator.Controllers
                 User = user,
                 VerificationCode = code
             };
-            ChangePassword change = new ChangePassword() { 
+            PasswordChange change = new PasswordChange() { 
                 user=user,
                 NewPassword=changeRequest.newPassword
             };
@@ -111,7 +115,7 @@ namespace Event_Creator.Controllers
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(user.Email, text, "هشدار امنیتی");
-            return Ok();
+            return Ok("پست الکترونیکی برای شما ارسال شده است");
         }
 
 
@@ -119,6 +123,8 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> ForgotPassword(string email)
         {
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Email.Equals(email));
+            Verification verification1 = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId == user.UserId && x.usage == Usage.ResetPassword).SingleOrDefaultAsync();
+            if (verification1 != null) return BadRequest("ایمیل قبلا برای شما ارسال شده است");
             if (user == null) return BadRequest(Errors.NullEmailResetPassword);
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -127,7 +133,7 @@ namespace Event_Creator.Controllers
             Verification verification = new Verification()
             {
                 User = user,
-                expirationTime = unixTimeSeconds + 300,
+                expirationTime = unixTimeSeconds + 300,/////////////////
                 Requested=0,
                 Resended=true,
                 usage=Usage.ResetPassword,

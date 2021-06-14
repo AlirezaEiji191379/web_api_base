@@ -40,9 +40,9 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
-            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Username.Equals(loginRequest.Username));
+            User user = await _appContext.Users.Where(x => x.Username.Equals(loginRequest.Username)).SingleOrDefaultAsync();
             if (user == null) return NotFound(Errors.wrongAuth);
-            Verification verification = await _appContext.verifications.Include(x => x.User).FirstOrDefaultAsync(x => x.User.Username.Equals(loginRequest.Username));
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(loginRequest.Username) && x.usage==Usage.Login).FirstOrDefaultAsync();
             if(verification!=null) return BadRequest(Information.okSignUp);
             if (user.Enable == false)
             {
