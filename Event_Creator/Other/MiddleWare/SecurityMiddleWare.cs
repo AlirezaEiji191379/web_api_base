@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Event_Creator.models.Security;
 namespace Event_Creator.Other.MiddleWare
 {
     // You may need to install the Microsoft.AspNetCore.Http.Abstractions package into your project
@@ -40,13 +40,18 @@ namespace Event_Creator.Other.MiddleWare
                 /// if the jwt access token was revoked! 
                 if (await dbContext.jwtBlackLists.SingleOrDefaultAsync(x => x.jwtToken.Equals(jti)) != null) {
                     httpContext.Response.StatusCode = 401;
-                    await httpContext.Response.WriteAsync("Revoked Token!");
+                    await httpContext.Response.WriteAsync("Revoked Token! you must relogin");
                     return;
                 }
                 RefreshToken refresh = await dbContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
                 if(refresh.UserAgent != httpContext.Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent")).ToString()){
+                    refresh.Revoked = true;
+                    await dbContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
+                        jwtToken=refresh.JwtTokenId
+                    });
                     httpContext.Response.StatusCode = 403;
-                    await httpContext.Response.WriteAsync("malicous client!");
+                    await httpContext.Response.WriteAsync("you must relogin");
+                    await dbContext.SaveChangesAsync();
                     return;
                 }
                 string ip = httpContext.Connection.RemoteIpAddress.ToString();

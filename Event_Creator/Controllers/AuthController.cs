@@ -178,7 +178,7 @@ namespace Event_Creator.Controllers
             var tokenS = jsonToken as JwtSecurityToken;
             var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
             RefreshToken requester = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
-            if(requester.Priority > priority)
+            if(requester.Priority < priority)
             {
                 return Forbid("شما به دلایل امنیتی اجازه ندارید مابقی نشست هایی که قبل از شما ورود نموده اند را حذف کنید");
             }
@@ -196,7 +196,7 @@ namespace Event_Creator.Controllers
 
         [Route("[action]")]
         [Authorize]
-        public async Task<List<DeviceResponse>> getAllInDevices()
+        public async Task<List<DeviceResponse>> getAllDevices()
         {
             var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
             var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];

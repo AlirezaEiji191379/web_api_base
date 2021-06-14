@@ -15,6 +15,7 @@ using System.Security.Cryptography;
 
 namespace Event_Creator.Controllers
 {
+    //checked!
     [Route("[controller]")]
     [ApiController]
     public class VerifyController : ControllerBase
@@ -30,7 +31,6 @@ namespace Event_Creator.Controllers
         }
 
 
-        // checked
         [Route("[action]/{username}/{code}")]
         public async Task<IActionResult> VerifySignUp(string username, int code)
         {
@@ -296,7 +296,7 @@ namespace Event_Creator.Controllers
             if (verification.Resended == true)
             {
                 user = _appContext.Users.Single(a => a.Username == username);
-                _appContext.verifications.Remove(await _appContext.verifications.Include(x => x.User).SingleAsync(a => a.User.UserId == user.UserId));
+                _appContext.verifications.Remove(verification);
                 _appContext.Users.Remove(user);
                 await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedVerification);
@@ -337,8 +337,7 @@ namespace Event_Creator.Controllers
 
             if (verification.Resended == true)
             {
-                Verification verification1 = await _appContext.verifications.FirstOrDefaultAsync(x => x.User.Username.Equals(username));
-                _appContext.verifications.Remove(verification1);
+                _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
                 return BadRequest(Errors.exceedLogin);
             }

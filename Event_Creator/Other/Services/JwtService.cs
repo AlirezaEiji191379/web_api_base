@@ -96,8 +96,19 @@ namespace Event_Creator.Other.Services
             }
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+            if (refreshToken.Revoked == true)
+            {
+                return new AuthResponse()
+                {
+                    ErrorList = Errors.RevokedToken,
+                    RefreshToken = null,
+                    JwtAccessToken = null,
+                    statusCode = 403,
+                    success = false
+                };
+            }
 
-            if(refreshToken.expirationTime < unixTimeSeconds)
+            if (refreshToken.expirationTime < unixTimeSeconds)
             {
                 _appContext.refreshTokens.Remove(refreshToken);
                 await _appContext.SaveChangesAsync();
@@ -111,17 +122,6 @@ namespace Event_Creator.Other.Services
                 };
             }
 
-            if (refreshToken.Revoked == true)
-            {
-                return new AuthResponse()
-                {
-                    ErrorList = Errors.RevokedToken,
-                    RefreshToken = null,
-                    JwtAccessToken = null,
-                    statusCode = 403,
-                    success = false
-                };
-            }
 
             var parameters = new TokenValidationParameters
             {
