@@ -150,7 +150,7 @@ namespace Event_Creator.Controllers
             await _appContext.SaveChangesAsync();
             string jwtId = Guid.NewGuid().ToString();
             string jwtAccessToken = await _jwtService.JwtTokenGenerator(user.UserId, jwtId);
-            RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId, user.UserId, HttpContext);
+            RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId, user.UserId, HttpContext,false,0);
             await _appContext.refreshTokens.AddAsync(refreshToken);
             await _appContext.SaveChangesAsync();
             AuthResponse response = new AuthResponse()
@@ -315,7 +315,7 @@ namespace Event_Creator.Controllers
                 Text = $"verification Code is {code} and it is valid for 15 mins!"
             };
             await _appContext.SaveChangesAsync();
-            await _userService.sendEmailToUser(user.Email,text, "کد تایید ثبت نام");
+            await _userService.sendEmailToUser(verification.User.Email,text, "کد تایید ثبت نام");
             return Ok(Information.okResendCode);
         }
 

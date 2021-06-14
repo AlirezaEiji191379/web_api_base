@@ -53,22 +53,23 @@ namespace Event_Creator.Controllers
             LockedAccount isLocked = null;
             FailedLogin failedLogin = null;
             isLocked = await _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == user.UserId);
+            failedLogin = await _appContext.failedLogins.Include(x => x.user).FirstOrDefaultAsync(x => x.user.Username.Equals(loginRequest.Username));
             if (isLocked != null)
             {
                 if (isLocked.unlockedTime > unixTimeSeconds) return StatusCode(429, Errors.failedLoginLock);
                 else { 
                   _appContext.lockedAccounts.Remove(isLocked);
+                    if (failedLogin != null) _appContext.failedLogins.Remove(failedLogin);
                     await _appContext.SaveChangesAsync();
                 }
             }
-            failedLogin = await _appContext.failedLogins.Include(x => x.user).FirstOrDefaultAsync(x => x.user.Username.Equals(loginRequest.Username));
             if (failedLogin != null && failedLogin.request == 5)
             {
                 _appContext.failedLogins.Remove(failedLogin);
                 await _appContext.lockedAccounts.AddAsync(new LockedAccount()
                 {
                     user = user,
-                    unlockedTime = unixTimeSeconds + 300/////////////////////////////////////////
+                    unlockedTime = unixTimeSeconds + 30/////////////////////////////////////////
                 });
                  await _appContext.SaveChangesAsync();
                 return StatusCode(429, Errors.failedLoginLock);
@@ -105,7 +106,7 @@ namespace Event_Creator.Controllers
                 User = user,
                 expirationTime=unixTimeSeconds+300////////////
             };
-
+            if (failedLogin != null) _appContext.failedLogins.Remove(failedLogin);
             await _appContext.verifications.AddAsync(newVerification);
             await _appContext.SaveChangesAsync();
             return Ok(Information.okSignIn);
@@ -147,7 +148,7 @@ namespace Event_Creator.Controllers
             var jsonToken = handler.ReadToken(stream);
             var tokenS = jsonToken as JwtSecurityToken;
             var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
-            RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId == jti.ToString());
+            RefreshToken refreshToken = await _appContext.refreshTokens.Include(x => x.user).SingleOrDefaultAsync(x => x.JwtTokenId == jti.ToString());
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(refreshToken.user.UserId));
             await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
             List<RefreshToken> allUserTokens = user.RefreshTokens.ToList().FindAll(x => x.Priority > refreshToken.Priority);
@@ -169,7 +170,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{priority}")]
         [HttpDelete]
         [Authorize]
-        public async Task<IActionResult> TermianteOneSession(int priority)
+        public async Task<IActionResult> TerminateOneSession(int priority)
         {
             var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
             var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
@@ -178,12 +179,13 @@ namespace Event_Creator.Controllers
             var tokenS = jsonToken as JwtSecurityToken;
             var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
             RefreshToken requester = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
-            if(requester.Priority < priority)
+            if(requester.Priority >= priority)
             {
-                return Forbid("شما به دلایل امنیتی اجازه ندارید مابقی نشست هایی که قبل از شما ورود نموده اند را حذف کنید");
+                return StatusCode(403,"شما به دلایل امنیتی اجازه ندارید مابقی نشست هایی که قبل از شما ورود نموده اند را حذف کنید");
             }
             await _appContext.Entry(requester).Reference(x => x.user).LoadAsync();
             RefreshToken finished = await _appContext.refreshTokens.Where(x => x.user.UserId==requester.user.UserId && x.Priority==priority).SingleOrDefaultAsync();
+            if (finished == null) return BadRequest("درخواست اشتباه");
             await _appContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
                 jwtToken=finished.JwtTokenId    
             });
@@ -219,7 +221,7 @@ namespace Event_Creator.Controllers
         }
 
         [Route("[action]")]
-        [Authorize(Roles ="User")]
+        [Authorize(Roles ="Admin")]
         public string test()
         {
             var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));

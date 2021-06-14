@@ -58,11 +58,13 @@ namespace Event_Creator.Other.Services
         }
 
 
-        public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , HttpContext httpContext)
+        public async Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , HttpContext httpContext,bool refresh,int priorityNum)
         {
             User user = await  _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
-            int priority = user.RefreshTokens.Count + 1;
+            int priority = 0;
+            if (refresh == false) priority = user.RefreshTokens.Count + 1;
+            else priority = priorityNum;
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             return new RefreshToken()
@@ -169,7 +171,7 @@ namespace Event_Creator.Other.Services
               
                 string jwtId = Guid.NewGuid().ToString();
                 string newJwtAccessToken =await JwtTokenGenerator(refreshToken.user.UserId, jwtId);
-                RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId,httpContext);
+                RefreshToken newrefreshToken = await GenerateRefreshToken(jwtId, refreshToken.user.UserId,httpContext,true,refreshToken.Priority);
                 await _appContext.refreshTokens.AddAsync(newrefreshToken);
                 _appContext.refreshTokens.Remove(refreshToken);
                 await _appContext.SaveChangesAsync();
