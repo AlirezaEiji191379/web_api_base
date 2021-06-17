@@ -8,6 +8,7 @@ it supports 2fa for login and register system with gmail smtp! </br>
 it sends securtiy email for unknown and suspected Ips and User-Agents! </br>
 it supports RSA cryptographic System for jwt Access Token Algorithm! </br>
 it has Efcore for its ORM!<br>
+it supports terminating sessions like telegram and security alert emails like google!<br>
 
 for creating the tables in database just use migration scrtipts in Visual studio!<br>
 
