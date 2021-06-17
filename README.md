@@ -18,7 +18,7 @@ contributer : ([@MoTheGoat](https://github.com/mothegoat)) </br>
 
 telegram : @PishroRezaEiji79  @HolyMHD </br>
 
-<h2> how to use Api? </h2>
+<h2> How to use Api? </h2>
 each part has example for how to interact with Api!
 
 <h3> Sign up </h3>
@@ -28,7 +28,7 @@ data =>json format! </br>
 </br>
 it will sends confirmation code to the email that you mentioned in the data! for verification you must send the code to the api! </br>
 
-<h3> verifing sign up </h3>
+<h3> Verifing sign up </h3>
 
 <b>Http Get</b> </br>  http://localhost:5000/Verify/VerifySignUp/{username}/{code} </br>
 <ol>
