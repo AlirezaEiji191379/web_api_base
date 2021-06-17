@@ -21,7 +21,7 @@ telegram : @PishroRezaEiji79  @HolyMHD </br>
 <h2> how to use Api? </h2>
 each part has example for how to interact with Api!
 
-<h3> sign up </h3>
+<h3> Sign up </h3>
 <b>Http Post </b> </br> http://localhost:5000/User/SignUp    </br> 
 data =>json format! </br>
 {"Username":"alirezaeiji151379","Password":"123456","Email":"alirezaeiji151379@gmail.com","PhoneNumber":"09194165232","Firstname":"alireza","Lastname":"ایجی"} </br>
@@ -41,7 +41,7 @@ it will sends confirmation code to the email that you mentioned in the data! for
 Resend another verification code to your email!
 <b>you only can resend verification code once!</b>
 
-<h3> siging in to your account </h3>
+<h3> Siging in to your account </h3>
 <b>Http Post</b>  
 </br>http://localhost:5000/Auth/Login </br>
 json data: </br>
@@ -55,12 +55,12 @@ json data: </br>
   <li>after 5 failure in sign in process your account is going to be locked for 5 min and you can not sign in during that 5 min!</li>
 </ol>
 
-<h3>resending sign in code</h3>
+<h3>Resending sign in code</h3>
 <b>you can request another login code just for once! </b> </br>
 <b>Http Get</b> http://localhost:5000/Verify/ResendCodeLogin/{username}
 
 
-<h3>verifing signIn Code</h3>
+<h3>Verifing signIn Code</h3>
 after successful login process (correct username and password) for security reasons we sends you verificaion email (2FA)! </br>
 
 <b>Http Get</b>
@@ -88,6 +88,66 @@ you must refresh your access token! </br>
 
 <b>Http Post</b> 
 </br> http://localhost:5000/Refresh </br>
+json data:
+{</br>
+"jwtAccessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MjM3NTQ2MzIsImp0aSI6IjQ4NDU0MzgzLWI3YzEtNDA3Ni05YzliLWEzODY3NmI5NmU0MiIsInVpZCI6IjEyIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiVXNlciIsImV4cCI6MTYyMzc1NTUzMiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo1MDAwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MDAwIn0.QT3h2EPNOBhj5AnMlUpEIQgfsFC9AiTXOtMfof3AyT38TSznSQvHlpPUQQ2wGkeVBT9BoKbpqq9RQv8nqz_jR3sp3ZVomrrLHfP7PAcX08lgl75XQnL1gVBVrojOU4FBdxQrGbnPjWH6ijeVHmqcEstRX_BZB9mVYI2Gu8rpSrhrpAfTmMliQ7Rq8TQnfMQASYqj7bV1EhY2GfF4eng0Hced8VWGzcDMQxHD_UbjsHCfl_K2bXmItU3Fss4loxlbiHC5IRkPnvUGkKSRofELwG8feluNEIckwuZDGIKwjl6LK-9t2zJG_CM5wgpCrkDce3YcAs2f-NEDq-cVlWzcHA", </br>
+"refreshToken": "247c3a55-d7b7-4e38-8427-c5d8317905d0"</br>
+} </br>
+
+<ol>
+  <li>if the refresh token does not exist, the request has failed response!</li>
+  <li>if the refresh token was revoked, the request has failed response!</li>
+  <li>if the refresh token was expired, the request has failed response!</li>
+  <li>if the access token is invalid,the request has failed response!</li>
+  <li>if the access token was not expired,the request has failed response!</li>  
+</ol>  
+if the refresh request was successful you get the new access and refresh token! </br>
+
+<h3> logout </h3>
+<b> Authorized Request </b> it means that if you want to logout you must add Authorization Bearer Header in your request! </br></br>
+
+<b>Http Delete </b> 
+</br>http://localhost:5000/Auth/logout</br>
+After logging out the refresh token is revoked and the access token is blacklisted!</br>
+In the Security middlerware which is Custom middleware I checked that if the token is not blacklisted! </br>
+
+<h3> Terminate All Session </h3>
+<b> Authorized Request </b> it means that if you want to logout you must add Authorization Bearer Header in your request! </br></br>
+<b>Http Delete</b> </br>http://localhost:5000/Auth/TerminateAllSessions</br>
+
+Each device has priority based on the login order to the account it means that if device A then B then C enter the account priorit of A is 1 B is 2 C is 3 and the device with lower priority can not terminate the session of the device with higher priority! for exampe if device B terminate All session the Device A is not going to be fired from account!
+
+<h3> Terminate one Session </h3>
+<b> Authorized Request </b> it means that if you want to logout you must add Authorization Bearer Header in your request! </br></br>
+<b>Http Delete</b> </br>http://localhost:5000/Auth/TerminateOneSession/{priority-number}</br>
+
+Each device has priority based on the login order to the account it means that if device A then B then C enter the account priorit of A is 1 B is 2 C is 3 and the device with lower priority can not terminate the session of the device with higher priority! for exampe if device B terminate All session the Device A is not going to be fired from account!
+
+if the prioriy number is bigger than entered devices you get Error Response! </br>
+
+
+<h3> Get All signedIn devices </h3>
+<b> Authorized Request </b> it means that if you want to logout you must add Authorization Bearer Header in your request! </br></br>
+<b>Http Get</b> </br>http://localhost:5000/Auth/getAllDevices</br>
+
+this request gives you a list of User-Agent (devices) that enters an account! </br>
+
+
+<h3>Change Password Request</h3>
+<b>Http Post</b> </br>http://localhost:5000/User/changePassword</br>
+<b> Authorized Request </b> it means that if you want to logout you must add Authorization Bearer Header in your request! </br></br>
+json data: </br>
+{</br>
+    "oldPassword" : "UbIgaXB37Hwe",</br>
+    "newPassword" : "123456"
+</br>    
+}
+
+<ol>
+  <li>if the user enter wrong password the request has failed response and the api sends you email that malicious client may enter your account! and you can terminate the session of that client!</li>
+  <li>if the user enter correct passoword Api sends verification Code To you!</li?
+</ol>
+  
 
 
 
