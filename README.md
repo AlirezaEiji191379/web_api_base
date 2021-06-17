@@ -13,7 +13,8 @@ for creating the tables in database just use migration scrtipts in Visual studio
 
 Api Doc is going to be released as soon as I can!</br>
 
-contributer : @mothegoat
+contributer : ([@MoTheGoat](https://github.com/mothegoat)) </br>
+              ([@AlirezaEiji191379](https://github.com/AlirezaEiji191379))
 
 telegram : @PishroRezaEiji79 </br>
 instagram : @alirezaeiji5
