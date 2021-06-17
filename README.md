@@ -57,7 +57,7 @@ json data: </br>
 
 <h3>Resending sign in code</h3>
 <b>you can request another login code just for once! </b> </br>
-<b>Http Get</b> http://localhost:5000/Verify/ResendCodeLogin/{username}
+<b>Http Get</b> </br> http://localhost:5000/Verify/ResendCodeLogin/{username} </br>
 
 
 <h3>Verifing signIn Code</h3>
@@ -147,7 +147,43 @@ json data: </br>
   <li>if the user enter wrong password the request has failed response and the api sends you email that malicious client may enter your account! and you can terminate the session of that client!</li>
   <li>if the user enter correct passoword Api sends verification Code To you!</li?
 </ol>
+
   
+<h3>Verify Change Password</h3>
+<b>Http Post</b> </br>http://localhost:5000/Verify/VerifyChangePassword/{username}/{code}</br>
+<b> Authorized Request </b> it means that if you want to logout you must add Authorization Bearer Header in your request! </br></br>  
+
+<ol>
+  <li>After 2 failure in verification code the request has failed response!</li>
+  <li>code expires after 15 min</li>
+  <li>after successful verification the password changes and All the devices loged out automatically and must relogin in to the account!</li> 
+</ol>
+ 
+<h3>forget password</h3>
+<b>Http Get</b> </br>http://localhost:5000/User/ForgetPassword/{email}</br>
+
+<ol>
+  <li>it sends you an email code verification for changing password</li>
+  <li>the code expires after 15 min!</li>
+</ol>
+
+<h3> verify forget code passowrd </h3>
+<b>Http Get</b> </br>http://localhost:5000/Verify/VerifyForgetPassword/{email}/{code}</br>
+
+<ol>
+  <li>if you try more than 2 times with failure the operation fails!</li>
+  <li>the code expires after 15 min!</li>
+  <li>After successful cerification we send an email includes your new password with 9 alphanumeric letters!</li>
+</ol>
+
+
+<h2>Security Hints</h2>
+
+if the ip address of the token changed, we send an security alert to the email address of client that another person with that ip and user-agent is in his account and if he is malicious client who stole the token the native client can logout and relogin! </br>
+if the user-agent of the token changes we revoke the related refresh token and blacklist the access token! </br>
+if the access token was balcklisted the request has failed response! it was added to the SecurityMiddleware Class!
+
+
 
 
 
