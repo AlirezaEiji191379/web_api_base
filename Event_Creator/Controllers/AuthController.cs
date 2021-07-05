@@ -221,11 +221,11 @@ namespace Event_Creator.Controllers
         }
 
         [Route("[action]")]
-        [Authorize(Roles ="User")]
+        //[Authorize(Roles ="User")]
         public string test()
         {
             var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
-            return Request.HttpContext.Connection.RemoteIpAddress.ToString();
+            return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
         }
 
 

@@ -4,91 +4,22 @@ using Event_Creator.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Event_Creator.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210705180017_category_added")]
+    partial class category_added
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("ProductVersion", "5.0.6")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-            modelBuilder.Entity("Event_Creator.models.Book", b =>
-                {
-                    b.Property<long>("BookId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<long?>("CategoryId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("addedDate")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("bookName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double?>("price")
-                        .HasColumnType("float");
-
-                    b.HasKey("BookId");
-
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("books");
-                });
-
-            modelBuilder.Entity("Event_Creator.models.Category", b =>
-                {
-                    b.Property<long>("CategoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("CategoryName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long?>("parentCategoryId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("CategoryId");
-
-                    b.HasIndex("parentCategoryId");
-
-                    b.ToTable("categories");
-                });
-
-            modelBuilder.Entity("Event_Creator.models.Exchange", b =>
-                {
-                    b.Property<long>("ExchangeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<long?>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("bookName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long?>("bookToExchangeBookId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("ExchangeId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("bookToExchangeBookId");
-
-                    b.ToTable("exchanges");
-                });
 
             modelBuilder.Entity("Event_Creator.models.LockedAccount", b =>
                 {
@@ -296,39 +227,6 @@ namespace Event_Creator.Migrations
                     b.ToTable("verifications");
                 });
 
-            modelBuilder.Entity("Event_Creator.models.Book", b =>
-                {
-                    b.HasOne("Event_Creator.models.Category", "category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId");
-
-                    b.Navigation("category");
-                });
-
-            modelBuilder.Entity("Event_Creator.models.Category", b =>
-                {
-                    b.HasOne("Event_Creator.models.Category", "parent")
-                        .WithMany()
-                        .HasForeignKey("parentCategoryId");
-
-                    b.Navigation("parent");
-                });
-
-            modelBuilder.Entity("Event_Creator.models.Exchange", b =>
-                {
-                    b.HasOne("Event_Creator.models.User", "user")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.HasOne("Event_Creator.models.Book", "bookToExchange")
-                        .WithMany("exchanges")
-                        .HasForeignKey("bookToExchangeBookId");
-
-                    b.Navigation("bookToExchange");
-
-                    b.Navigation("user");
-                });
-
             modelBuilder.Entity("Event_Creator.models.LockedAccount", b =>
                 {
                     b.HasOne("Event_Creator.models.User", "user")
@@ -374,11 +272,6 @@ namespace Event_Creator.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Event_Creator.models.Book", b =>
-                {
-                    b.Navigation("exchanges");
                 });
 
             modelBuilder.Entity("Event_Creator.models.User", b =>
