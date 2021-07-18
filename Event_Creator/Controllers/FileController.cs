@@ -19,15 +19,16 @@ namespace Event_Creator.Controllers
         
         [HttpPost]
         [Route("[action]")]
-        public async Task<IActionResult> UploadImage(List<IFormFile> files)
+        public async Task<IActionResult> UploadImage(List<IFormFile> bookImages)
         {
-            if (files == null) return BadRequest();
-            foreach (var file in files)
+            if (bookImages == null) return BadRequest();
+            foreach (var file in bookImages)
             {
-                var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images", file.FileName));
-                var stream = new FileStream(path, FileMode.Create);
-                await file.CopyToAsync(stream);
-                stream.Close();
+                Console.WriteLine(Path.GetExtension(file.FileName));
+                //var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images", file.FileName));
+                //var stream = new FileStream(path, FileMode.Create);
+                //await file.CopyToAsync(stream);
+                //stream.Close();
             }
             return Ok();
         }

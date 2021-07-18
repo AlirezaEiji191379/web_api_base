@@ -7,6 +7,16 @@ namespace Event_Creator.Other
 {
     public static class Errors
     {
+
+        public static string InvalidFileFormat
+        {
+            get { return "فرمت ارسالی عکس ها باید jpg و یا png باشد"; }
+        }
+
+        public static string InvalidBookJsonFormat
+        {
+            get { return "فرمت ارسالی برای کتاب ها نا درست هستند!"; }
+        }
         public static string InvalidCategoryName
         {
             get { return "چنین دسته بندی وجود ندارد"; }

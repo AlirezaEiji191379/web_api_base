@@ -4,14 +4,16 @@ using Event_Creator.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Event_Creator.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210718094846_some_changes_in_data_model")]
+    partial class some_changes_in_data_model
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,31 +28,24 @@ namespace Event_Creator.Migrations
                         .HasColumnType("bigint")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("BookName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<long>("CategoryId")
-                        .HasColumnType("bigint");
-
-                    b.Property<double>("Price")
-                        .HasColumnType("float");
-
-                    b.Property<string>("PublisherName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long?>("UserId")
                         .HasColumnType("bigint");
 
                     b.Property<long>("addedDate")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("bookName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("price")
+                        .HasColumnType("float");
+
+                    b.Property<string>("publisherName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("BookId");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("books");
                 });
@@ -81,12 +76,11 @@ namespace Event_Creator.Migrations
                         .HasColumnType("bigint")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("BookName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<long?>("UserId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("bookName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<long?>("bookToExchangeBookId")
                         .HasColumnType("bigint");
@@ -308,19 +302,13 @@ namespace Event_Creator.Migrations
 
             modelBuilder.Entity("Event_Creator.models.Book", b =>
                 {
-                    b.HasOne("Event_Creator.models.Category", "Category")
+                    b.HasOne("Event_Creator.models.Category", "category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Event_Creator.models.User", "user")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("Category");
-
-                    b.Navigation("user");
+                    b.Navigation("category");
                 });
 
             modelBuilder.Entity("Event_Creator.models.Exchange", b =>
