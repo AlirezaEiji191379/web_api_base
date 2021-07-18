@@ -37,7 +37,7 @@ namespace Event_Creator.Controllers
             if (bookImages.Count > 4) return BadRequest("حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود");
             foreach(var file in bookImages)
             {
-                if(Path.GetExtension(file.FileName)!=".jpg" && Path.GetExtension(file.FileName) != ".png")
+                if(Path.GetExtension(file.FileName)!=".jpg" && Path.GetExtension(file.FileName) != ".png" && Path.GetExtension(file.FileName) != ".jpeg")
                 {
                     return BadRequest(Errors.InvalidFileFormat);
                 }
@@ -69,6 +69,7 @@ namespace Event_Creator.Controllers
                 var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
                 //book.user = await _appContext.Users.Where(x => x.UserId == Convert.ToInt64(uid)).SingleAsync();
                 book.UserId = Convert.ToInt64(uid);
+                book.imageCount = bookImages.Count;
                 if(book.exchanges!=null && book.exchanges.Count > 0)
                 {
                     foreach (var b in book.exchanges)
@@ -96,10 +97,59 @@ namespace Event_Creator.Controllers
             }
             catch
             {
-                return BadRequest("");
+               return BadRequest("");
             }
         }
        
+        [Authorize(Roles="User")]
+        [HttpPut]
+        [Route("[action]")]
+        public async Task<IActionResult> UpdateBookName([FromBody]UpdateBookNameRequest update)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+             x.BookId == update.BookId).SingleOrDefaultAsync();
+
+            if(book == null)
+            {
+                return NotFound("چنین کتابی موجود نیست");
+            }
+            book.BookName = update.BookName;
+            _appContext.books.Update(book);
+            await _appContext.SaveChangesAsync();
+            return Ok("نام کتاب تغییر کرد!");
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPut]
+        [Route("[action]")]
+        public async Task<IActionResult> UpdateBookPrice([FromBody] UpdateBookPriceRequest update)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+             x.BookId == update.BookId).SingleOrDefaultAsync();
+
+            if (book == null)
+            {
+                return NotFound("چنین کتابی موجود نیست");
+            }
+            book.Price = update.Price;
+            _appContext.books.Update(book);
+            await _appContext.SaveChangesAsync();
+            return Ok("قیمت کتاب تغییر کرد");
+        }
+
+
 
 
     }

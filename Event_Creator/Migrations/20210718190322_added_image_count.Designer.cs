@@ -4,14 +4,16 @@ using Event_Creator.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Event_Creator.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210718190322_added_image_count")]
+    partial class added_image_count
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -318,7 +320,7 @@ namespace Event_Creator.Migrations
                         .IsRequired();
 
                     b.HasOne("Event_Creator.models.User", "user")
-                        .WithMany("books")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -397,8 +399,6 @@ namespace Event_Creator.Migrations
 
             modelBuilder.Entity("Event_Creator.models.User", b =>
                 {
-                    b.Navigation("books");
-
                     b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618

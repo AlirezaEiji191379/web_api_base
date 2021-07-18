@@ -17,20 +17,24 @@ namespace Event_Creator.Controllers
     {
 
         
-        [HttpPost]
-        [Route("[action]")]
-        public async Task<IActionResult> UploadImage(List<IFormFile> bookImages)
+        [HttpGet]
+        [Route("[action]/{imageId}")]
+        public IActionResult DownloadImage(string imageId)
         {
-            if (bookImages == null) return BadRequest();
-            foreach (var file in bookImages)
+
+            string path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
+            string[] files = Directory.GetFiles(path);
+            foreach(var file in files)
             {
-                Console.WriteLine(Path.GetExtension(file.FileName));
-                //var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images", file.FileName));
-                //var stream = new FileStream(path, FileMode.Create);
-                //await file.CopyToAsync(stream);
-                //stream.Close();
+                if (file.Contains(imageId))
+                {
+                    var image = System.IO.File.OpenRead(file);
+                    string content_Type = "image/" + Path.GetExtension(file).Substring(1);
+                    return File(image , content_Type);
+                }
             }
-            return Ok();
+            return NotFound();
+
         }
 
     }

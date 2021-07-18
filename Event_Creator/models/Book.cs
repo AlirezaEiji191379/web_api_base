@@ -20,6 +20,8 @@ namespace Event_Creator.models
         public long addedDate { get; set; }
         [Required(ErrorMessage ="لطفا نام انتشارات کتاب را وارد کنید")]
         public string PublisherName { get; set; }
+
+        public int imageCount { get; set; }
         public ICollection<Exchange> exchanges { get; set; }
 
 
