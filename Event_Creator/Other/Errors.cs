@@ -7,6 +7,14 @@ namespace Event_Creator.Other
 {
     public static class Errors
     {
+        public static string InvalidCategoryName
+        {
+            get { return "چنین دسته بندی وجود ندارد"; }
+        }
+        public static string InvalidParentCategory
+        {
+            get { return "چنین دسته بندی مادری وجود ندارد"; }
+        }
         public static string exceedLogin {
             get { return "لطفا مجددا اقدام به ورود نمایید"; }
         }

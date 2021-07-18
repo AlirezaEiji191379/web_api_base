@@ -4,14 +4,16 @@ using Event_Creator.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Event_Creator.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210717093001_all_of_them_added_to_new_pc")]
+    partial class all_of_them_added_to_new_pc
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -38,9 +40,6 @@ namespace Event_Creator.Migrations
                     b.Property<double?>("price")
                         .HasColumnType("float");
 
-                    b.Property<string>("publisherName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("BookId");
 
                     b.HasIndex("CategoryId");
@@ -56,13 +55,14 @@ namespace Event_Creator.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("CategoryName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ParentId")
-                        .HasColumnType("int");
+                    b.Property<long?>("parentCategoryId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("CategoryId");
+
+                    b.HasIndex("parentCategoryId");
 
                     b.ToTable("categories");
                 });
@@ -305,6 +305,15 @@ namespace Event_Creator.Migrations
                         .HasForeignKey("CategoryId");
 
                     b.Navigation("category");
+                });
+
+            modelBuilder.Entity("Event_Creator.models.Category", b =>
+                {
+                    b.HasOne("Event_Creator.models.Category", "parent")
+                        .WithMany()
+                        .HasForeignKey("parentCategoryId");
+
+                    b.Navigation("parent");
                 });
 
             modelBuilder.Entity("Event_Creator.models.Exchange", b =>

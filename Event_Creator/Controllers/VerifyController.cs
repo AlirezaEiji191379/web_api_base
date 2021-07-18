@@ -358,7 +358,7 @@ namespace Event_Creator.Controllers
                 Text = $"verification Code is {code} and it is valid for 5 mins!"
             };
             await _appContext.SaveChangesAsync();
-            await _userService.sendEmailToUser(user.Email, text, "کد تایید ورود");
+            await _userService.sendEmailToUser(verification.User.Email, text, "کد تایید ورود");
             return Ok(Information.okResendCode);
         }
 

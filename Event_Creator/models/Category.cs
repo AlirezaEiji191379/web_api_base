@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,8 +9,10 @@ namespace Event_Creator.models
     public class Category
     {
         public long CategoryId { get; set;}
+        [Required(ErrorMessage ="لطفا نام دسته بندی را وارد نمایید")]
         public string CategoryName { get; set; }
-        public Category parent { get; set; }
+        [Required(ErrorMessage ="لطفا دسته بندی مادر را وارد کنید")]
+        public int ParentId { get; set; }
 
     }
 }

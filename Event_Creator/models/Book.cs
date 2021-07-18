@@ -13,6 +13,7 @@ namespace Event_Creator.models
         public string bookName { get; set; }
         public double? price { get; set; }
         public long addedDate { get; set; }
+        public string publisherName { get; set; }
         public ICollection<Exchange> exchanges { get; set; }
 
 

@@ -17,6 +17,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MimeKit;
+using System.IO;
 
 namespace Event_Creator.Controllers
 {
@@ -225,7 +226,10 @@ namespace Event_Creator.Controllers
         public string test()
         {
             var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
-            return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
+
+            ///return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
+            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
+            return path.ToString();
         }
 
 
