@@ -12,6 +12,7 @@ namespace Event_Creator.models
         [Required(ErrorMessage ="لطفا دسته بندی را وارد کنید")]
         public long CategoryId { get; set; }
         public Category Category { get; set; }
+        public long UserId { get; set; }
         public User user { get; set; }
         [Required(ErrorMessage ="لطفا نام کتاب را وارد کنید")]
         public string BookName { get; set; }

@@ -67,7 +67,8 @@ namespace Event_Creator.Controllers
                 var jsonToken = handler.ReadToken(stream);
                 var tokenS = jsonToken as JwtSecurityToken;
                 var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-                book.user = await _appContext.Users.Where(x => x.UserId == Convert.ToInt64(uid)).SingleAsync();
+                //book.user = await _appContext.Users.Where(x => x.UserId == Convert.ToInt64(uid)).SingleAsync();
+                book.UserId = Convert.ToInt64(uid);
                 if(book.exchanges!=null && book.exchanges.Count > 0)
                 {
                     foreach (var b in book.exchanges)
