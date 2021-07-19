@@ -239,8 +239,37 @@ namespace Event_Creator.Controllers
             await _appContext.SaveChangesAsync();
             return Ok("افزوده شد");
         }
+        
+        
+        [Authorize(Roles = "User")]
+        [HttpDelete]
+        [Route("[action]/{exchangeId}")]
+        public async Task<IActionResult> DeleteExchangeBook(long exchangeId)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
 
+            Exchange exchange = await _appContext.exchanges.Where(x => x.ExchangeId == exchangeId).SingleOrDefaultAsync();
+            if (exchange == null)
+            {
+                return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
+            }
+            long bookId = exchange.bookToExchangeId;
+            Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == Convert.ToInt64(uid)).SingleOrDefaultAsync();
+            if(book == null)
+            {
+                return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
+            }
+            _appContext.exchanges.Remove(exchange);
+            await _appContext.SaveChangesAsync();
+            return Ok("کتاب تبادلی مورد نظر حذف شد");
+        }
 
+        
 
 
 
