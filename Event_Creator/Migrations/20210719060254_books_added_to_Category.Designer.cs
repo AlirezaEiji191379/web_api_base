@@ -4,14 +4,16 @@ using Event_Creator.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Event_Creator.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210719060254_books_added_to_Category")]
+    partial class books_added_to_Category
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,12 +90,17 @@ namespace Event_Creator.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("bookToExchangeId")
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("bookToExchangeBookId")
                         .HasColumnType("bigint");
 
                     b.HasKey("ExchangeId");
 
-                    b.HasIndex("bookToExchangeId");
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("bookToExchangeBookId");
 
                     b.ToTable("exchanges");
                 });
@@ -325,13 +332,17 @@ namespace Event_Creator.Migrations
 
             modelBuilder.Entity("Event_Creator.models.Exchange", b =>
                 {
+                    b.HasOne("Event_Creator.models.User", "user")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
                     b.HasOne("Event_Creator.models.Book", "bookToExchange")
                         .WithMany("exchanges")
-                        .HasForeignKey("bookToExchangeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("bookToExchangeBookId");
 
                     b.Navigation("bookToExchange");
+
+                    b.Navigation("user");
                 });
 
             modelBuilder.Entity("Event_Creator.models.LockedAccount", b =>

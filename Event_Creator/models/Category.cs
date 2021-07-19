@@ -14,5 +14,7 @@ namespace Event_Creator.models
         [Required(ErrorMessage ="لطفا دسته بندی مادر را وارد کنید")]
         public int ParentId { get; set; }
 
+        public ICollection<Book> books { get; set; }
+
     }
 }

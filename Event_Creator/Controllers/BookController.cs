@@ -76,7 +76,6 @@ namespace Event_Creator.Controllers
                     {
                         if (b.BookName == null || b.BookName == "") return BadRequest("نام کتاب تبادلی را وارد کنید");
                         b.bookToExchange = book;
-                        b.user = book.user;
                     }
                     await _appContext.exchanges.AddRangeAsync(book.exchanges);
                 }
@@ -148,6 +147,100 @@ namespace Event_Creator.Controllers
             await _appContext.SaveChangesAsync();
             return Ok("قیمت کتاب تغییر کرد");
         }
+        
+
+        [Authorize(Roles ="User")]
+        [HttpPut]
+        [Route("[action]")]
+        public async Task<IActionResult> UpdateBookCategory([FromBody]UpdateBookCategoryRequest update)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+             x.BookId == update.BookId).SingleOrDefaultAsync();
+
+            if (book == null)
+            {
+                return NotFound("چنین کتابی موجود نیست");
+            }
+
+            if (await _appContext.categories.Where(x => x.CategoryId == update.CategoryId).SingleOrDefaultAsync() == null)
+            {
+                return BadRequest("این دسته بندی موجود نمیباشد");
+            }
+            if (await _appContext.categories.Where(x => x.ParentId == update.CategoryId).FirstOrDefaultAsync() != null)
+            {
+                return BadRequest("لطفا دسته بندی درست را انتخاب کنید");
+            }
+
+            book.CategoryId = update.CategoryId;
+            _appContext.books.Update(book);
+            await _appContext.SaveChangesAsync();
+            return Ok("دسته بندی کتاب عوض شد");
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPut]
+        [Route("[action]")]
+        public async Task<IActionResult> UpdateBookExchangeName([FromBody] UpdateExchangeBookNameRequest update)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+             x.BookId == update.BookId).SingleOrDefaultAsync();
+
+            if (book == null)
+            {
+                return NotFound("چنین کتابی موجود نیست");
+            }
+
+            Exchange exchangeBook = await _appContext.exchanges.Where(x => x.ExchangeId==update.ExchangeId &&
+            x.bookToExchangeId==update.BookId).SingleOrDefaultAsync();
+
+            if(exchangeBook == null)
+            {
+                return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
+            }
+            exchangeBook.BookName = update.BookName;
+            _appContext.exchanges.Update(exchangeBook);
+            await _appContext.SaveChangesAsync();
+            return Ok("کتاب تبادلی به روز رسانی شد");
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPut]
+        [Route("[action]")]
+        public async Task<IActionResult> AddExchangeBook([FromBody]AddExchangeBookRequest update)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+             x.BookId == update.BookId).SingleOrDefaultAsync();
+
+            if (book == null)
+            {
+                return NotFound("چنین کتابی موجود نیست");
+            }
+
+            update.exchange.bookToExchangeId = update.BookId;
+            await _appContext.exchanges.AddAsync(update.exchange);
+            await _appContext.SaveChangesAsync();
+            return Ok("افزوده شد");
+        }
+
+
 
 
 
