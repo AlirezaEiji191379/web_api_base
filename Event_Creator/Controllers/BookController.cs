@@ -269,7 +269,38 @@ namespace Event_Creator.Controllers
             return Ok("کتاب تبادلی مورد نظر حذف شد");
         }
 
-        
+        [Authorize]
+        [HttpDelete]
+        [Route("[action]/{bookId}")]
+        public async Task<IActionResult> DeleteBook(long bookId)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            Book book = await _appContext.books.Where(x => x.BookId == bookId).SingleOrDefaultAsync();
+            if (book == null)
+            {
+                return BadRequest("چنین کتابی وجود ندارد");
+            }
+
+            if(book.UserId != userId)
+            {
+                User user=await _appContext.Users.Where(x => x.UserId == userId).SingleAsync();
+                if (user.role == Role.User)
+                {
+                    return StatusCode(403, "شما قفط می توانید کتاب های خود را حذف کنید");
+                }
+            }
+            await _appContext.Entry(book).Collection(x => x.exchanges).LoadAsync();
+            book.exchanges.Clear();
+            _appContext.books.Remove(book);
+            await _appContext.SaveChangesAsync();
+            return Ok();
+        }
 
 
 
