@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Event_Creator.models
@@ -33,11 +34,46 @@ namespace Event_Creator.models
         [Column(TypeName ="nvarchar(30)")]
         public string LastName { get; set; }
         public bool Enable { get; set; }
-
+        [JsonIgnore]
         public Role role { get; set; }
-
         public ICollection<RefreshToken> RefreshTokens { get; set; } 
         public ICollection<Book> books { get; set; }
+
+        public bool ShouldSerializeUserId()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializePassword()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializebooks()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializeRefreshTokens()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializeUsername()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializeEnable()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializerole()
+        {
+            return false;
+        }
+
     }
     public enum Role
     {

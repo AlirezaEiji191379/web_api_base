@@ -76,7 +76,7 @@ namespace Event_Creator
             });
             services.AddHttpContextAccessor();
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IJwtService, JwtService>();
         }

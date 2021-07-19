@@ -12,7 +12,7 @@ namespace Event_Creator.data
     {
         public void Configure(EntityTypeBuilder<Category> builder)
         {
-            ///builder.HasIndex(x => x.CategoryName).IsUnique();
+            builder.HasIndex(x => x.CategoryName).IsUnique();
         }
     }
 }

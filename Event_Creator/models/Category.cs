@@ -16,5 +16,15 @@ namespace Event_Creator.models
 
         public ICollection<Book> books { get; set; }
 
+        public bool ShouldSerializebooks()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializeParentId()
+        {
+            return false;
+        }
+
     }
 }

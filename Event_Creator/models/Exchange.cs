@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Event_Creator.models
@@ -13,5 +14,10 @@ namespace Event_Creator.models
         public Book bookToExchange { get; set; }
         [Required(ErrorMessage ="لطفا اسم کتابی که تبادل می کنید را وارد کنید")]
         public string BookName { get; set; }
+
+        public bool ShouldSerializebookToExchange()
+        {
+            return false;
+        }
     }
 }

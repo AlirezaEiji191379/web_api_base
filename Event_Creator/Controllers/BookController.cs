@@ -70,6 +70,7 @@ namespace Event_Creator.Controllers
                 //book.user = await _appContext.Users.Where(x => x.UserId == Convert.ToInt64(uid)).SingleAsync();
                 book.UserId = Convert.ToInt64(uid);
                 book.imageCount = bookImages.Count;
+                book.Exchangable = false;
                 if(book.exchanges!=null && book.exchanges.Count > 0)
                 {
                     foreach (var b in book.exchanges)
@@ -77,6 +78,7 @@ namespace Event_Creator.Controllers
                         if (b.BookName == null || b.BookName == "") return BadRequest("نام کتاب تبادلی را وارد کنید");
                         b.bookToExchange = book;
                     }
+                    book.Exchangable = true;
                     await _appContext.exchanges.AddRangeAsync(book.exchanges);
                 }
                 await _appContext.books.AddAsync(book);
@@ -299,7 +301,49 @@ namespace Event_Creator.Controllers
             book.exchanges.Clear();
             _appContext.books.Remove(book);
             await _appContext.SaveChangesAsync();
-            return Ok();
+            return Ok("کتاب مورد نظر حذف شد");
+        }
+
+
+        [Authorize]
+        [HttpGet]
+        [Route("[action]")]
+        public IActionResult GetAllBooksByUserId()
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            var allBooks = _appContext.books.Where(x => x.UserId == userId).ToList();
+            return Ok(allBooks);
+        }
+
+        [HttpGet]
+        [Route("[action]/{bookId}")]
+        public async Task<IActionResult> GetBookById(long bookId)
+        {
+            Book book = await _appContext.books.Where(x => x.BookId==bookId).SingleOrDefaultAsync();
+            book.jsonStatus = JsonStatus.EnableUserAndCategory;
+            if (book == null)
+            {
+                return BadRequest("چنین کتابی وجود ندارد");
+            }
+            await _appContext.Entry(book).Collection(x => x.exchanges).LoadAsync();
+            await _appContext.Entry(book).Reference(x => x.user).LoadAsync();
+            await _appContext.Entry(book).Reference(x => x.Category).LoadAsync();
+            //string json = json = JsonConvert.SerializeObject(bookResponse);
+            return Ok(book);
+        }
+
+        [HttpGet]
+        [Route("[action]/{categoryId}")]
+        public async Task<IActionResult> GetAllBooksByCategory(long categoryId)
+        {
+            var books = _appContext.books.Where(x => x.CategoryId == categoryId);
+            return Ok(books);
         }
 
 
