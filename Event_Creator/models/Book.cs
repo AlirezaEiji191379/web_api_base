@@ -25,6 +25,8 @@ namespace Event_Creator.models
         public ICollection<Exchange> exchanges { get; set; }
         public bool Exchangable { get; set; }
 
+        public long views { get; set; }
+
         public bool ShouldSerializeCategoryId()
         {
             return false;

@@ -331,9 +331,12 @@ namespace Event_Creator.Controllers
                 return BadRequest("چنین کتابی وجود ندارد");
             }
             book.jsonStatus = JsonStatus.EnableUserAndCategory;
+            book.views = book.views + 1;
             await _appContext.Entry(book).Collection(x => x.exchanges).LoadAsync();
             await _appContext.Entry(book).Reference(x => x.user).LoadAsync();
             await _appContext.Entry(book).Reference(x => x.Category).LoadAsync();
+            _appContext.books.Update(book);
+            await _appContext.SaveChangesAsync();
             return Ok(book);
         }
 
