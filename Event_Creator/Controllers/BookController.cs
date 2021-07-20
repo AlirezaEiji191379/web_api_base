@@ -341,7 +341,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{categoryId}")]
         public async Task<IActionResult> GetAllBooksByCategory(long categoryId,Status status,Sort sort,double min_price=-1,double max_price=-1,int index=1)
         {
-            index = index * 3;
+            index = index * 5;
             List<Book> books = null;
             if(status == Status.all)
             {
