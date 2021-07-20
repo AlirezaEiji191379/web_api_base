@@ -326,28 +326,77 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> GetBookById(long bookId)
         {
             Book book = await _appContext.books.Where(x => x.BookId==bookId).SingleOrDefaultAsync();
-            book.jsonStatus = JsonStatus.EnableUserAndCategory;
             if (book == null)
             {
                 return BadRequest("چنین کتابی وجود ندارد");
             }
+            book.jsonStatus = JsonStatus.EnableUserAndCategory;
             await _appContext.Entry(book).Collection(x => x.exchanges).LoadAsync();
             await _appContext.Entry(book).Reference(x => x.user).LoadAsync();
             await _appContext.Entry(book).Reference(x => x.Category).LoadAsync();
-            //string json = json = JsonConvert.SerializeObject(bookResponse);
             return Ok(book);
         }
 
         [HttpGet]
         [Route("[action]/{categoryId}")]
-        public async Task<IActionResult> GetAllBooksByCategory(long categoryId)
+        public async Task<IActionResult> GetAllBooksByCategory(long categoryId,Status status,Sort sort,double min_price=-1,double max_price=-1,int index=1)
         {
-            var books = _appContext.books.Where(x => x.CategoryId == categoryId);
+            index = index * 3;
+            List<Book> books = null;
+            if(status == Status.all)
+            {
+                if (sort == Sort.price)
+                {
+                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+
+                }
+                else
+                {
+                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+
+                }
+            }
+            else
+            {
+                if (sort == Sort.price)
+                {
+                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                }
+                else
+                {
+                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                }
+            }
             return Ok(books);
         }
 
 
 
 
+
+
+        public enum Status
+        {
+            all,
+            exchange
+        }
+
+        public enum Sort
+        {
+            time,
+            price
+        }
     }
 }
