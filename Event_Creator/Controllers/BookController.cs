@@ -19,7 +19,7 @@ namespace Event_Creator.Controllers
     public class BookController : ControllerBase
     {
         private readonly ApplicationContext _appContext;
-
+        private readonly int limit = 3;
         public BookController(ApplicationContext applicationContext)
         {
             _appContext = applicationContext;
@@ -87,7 +87,7 @@ namespace Event_Creator.Controllers
                 foreach (var file in bookImages)
                 {
                     string name = book.BookId.ToString() + "_" + i.ToString() + Path.GetExtension(file.FileName).ToLower(); 
-                    var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images", name));
+                    var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books", name));
                     var fileStream = new FileStream(path, FileMode.Create);
                     await file.CopyToAsync(fileStream);
                     fileStream.Close();
@@ -341,24 +341,48 @@ namespace Event_Creator.Controllers
         [Route("[action]/{categoryId}")]
         public async Task<IActionResult> GetAllBooksByCategory(long categoryId,Status status,Sort sort,double min_price=-1,double max_price=-1,int index=1)
         {
-            index = index * 5;
+            int skip = (index - 1) * limit;
             List<Book> books = null;
             if(status == Status.all)
             {
                 if (sort == Sort.price)
                 {
-                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
-                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
-                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
-                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    if (min_price == -1 && max_price == -1) { 
+                       if(categoryId!=0) books = await _appContext.books.Where(x => x.CategoryId == categoryId).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                       else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (min_price != -1 && max_price == -1) {
+                       if(categoryId!=0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync(); 
+                       else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (max_price == -1 && max_price != -1) { 
+                      if(categoryId!=0)  books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else {
+                      if(categoryId!=0)  books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                      else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
 
                 }
                 else
                 {
-                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
-                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
-                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
-                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    if (min_price == -1 && max_price == -1) { 
+                      if(categoryId!=0)  books = await _appContext.books.Where(x => x.CategoryId == categoryId).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync(); 
+                      else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (min_price != -1 && max_price == -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (max_price == -1 && max_price != -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
 
                 }
             }
@@ -366,17 +390,41 @@ namespace Event_Creator.Controllers
             {
                 if (sort == Sort.price)
                 {
-                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
-                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
-                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
-                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.Price).Take(index).ToListAsync(); }
+                    if (min_price == -1 && max_price == -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Exchangable == true).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (min_price != -1 && max_price == -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && x.Exchangable == true).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (max_price == -1 && max_price != -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.Price).Skip(skip).Take(limit).ToListAsync();
+                    }
                 }
                 else
                 {
-                    if (min_price == -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
-                    else if (min_price != -1 && max_price == -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
-                    else if (max_price == -1 && max_price != -1) { books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
-                    else { books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Take(index).ToListAsync(); }
+                    if (min_price == -1 && max_price == -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Exchangable == true).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (min_price != -1 && max_price == -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else if (max_price == -1 && max_price != -1) {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
+                    else {
+                        if (categoryId != 0) books = await _appContext.books.Where(x => x.CategoryId == categoryId && x.Price >= min_price && max_price >= x.Price && x.Exchangable == true).OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                        else books = await _appContext.books.OrderByDescending(x => x.addedDate).Skip(skip).Take(limit).ToListAsync();
+                    }
                 }
             }
             return Ok(books);

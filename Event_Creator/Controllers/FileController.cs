@@ -19,10 +19,11 @@ namespace Event_Creator.Controllers
         
         [HttpGet]
         [Route("[action]/{imageId}")]
-        public IActionResult DownloadImage(string imageId)
+        public IActionResult DownloadImage(string imageId,Image kind)
         {
-
-            string path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
+            string path = null;
+            if(kind==Image.book) path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books"));
+            else path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users"));
             string[] files = Directory.GetFiles(path);
             foreach(var file in files)
             {
@@ -35,6 +36,12 @@ namespace Event_Creator.Controllers
             }
             return NotFound();
 
+        }
+
+        public enum Image
+        {
+            book,
+            user
         }
 
     }
