@@ -30,6 +30,8 @@ namespace Event_Creator.models
         public DbSet<Category> categories { get; set; }
         public DbSet<Book> books { get; set; }
         public DbSet<Exchange> exchanges { get; set;}
+
+        public DbSet<Bookmark> bookmarks { get; set; }
            
 
     }

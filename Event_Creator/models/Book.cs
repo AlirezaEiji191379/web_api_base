@@ -27,6 +27,8 @@ namespace Event_Creator.models
 
         public long views { get; set; }
 
+        public long bookmarks { get; set; }
+
         public bool ShouldSerializeCategoryId()
         {
             return false;

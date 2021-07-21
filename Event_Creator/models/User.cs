@@ -38,7 +38,12 @@ namespace Event_Creator.models
         public Role role { get; set; }
         public ICollection<RefreshToken> RefreshTokens { get; set; } 
         public ICollection<Book> books { get; set; }
+        public ICollection<Bookmark> bookmarks { get; set; }
 
+        public bool ShouldSerialzebookmarks()
+        {
+            return false;
+        }
         public bool ShouldSerializeUserId()
         {
             return false;

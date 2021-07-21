@@ -433,6 +433,34 @@ namespace Event_Creator.Controllers
             return Ok(books);
         }
 
+        [HttpPut]
+        [Authorize]
+        [Route("[action]/{bookId}")]
+        public async Task<IActionResult> Bookmark(long bookId)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            Book book = await _appContext.books.Where(x => x.BookId==bookId).SingleOrDefaultAsync();
+            if(book == null)
+            {
+                return BadRequest("چنین کتابی موجود نیست");
+            }
+            Bookmark bookmark = new Bookmark()
+            {
+                book=book,
+                userId=userId
+            };
+            book.bookmarks = book.bookmarks + 1;
+            _appContext.books.Update(book);
+            await _appContext.bookmarks.AddAsync(bookmark);
+            await _appContext.SaveChangesAsync();
+            return Ok("کتاب به لیست افزوده شد");
+        }  
 
         public enum Status
         {
