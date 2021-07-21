@@ -12,5 +12,8 @@ namespace Event_Creator.models
         public User user { get; set; }
         public Book book { get; set; }
 
+       // public bool ShouldSerializeuser() => false;
+        
+
     }
 }

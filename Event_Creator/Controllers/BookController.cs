@@ -300,6 +300,8 @@ namespace Event_Creator.Controllers
             await _appContext.Entry(book).Collection(x => x.exchanges).LoadAsync();
             book.exchanges.Clear();
             _appContext.books.Remove(book);
+            List<Bookmark> bookmarks = await _appContext.bookmarks.Include(x => x.book).Where(x => x.book.BookId==bookId).ToListAsync();
+            _appContext.bookmarks.RemoveRange(bookmarks);
             await _appContext.SaveChangesAsync();
             return Ok("کتاب مورد نظر حذف شد");
         }
@@ -450,6 +452,8 @@ namespace Event_Creator.Controllers
             {
                 return BadRequest("چنین کتابی موجود نیست");
             }
+            Bookmark mark = await _appContext.bookmarks.Include(x => x.book).Where(x => x.userId == userId && x.book.BookId == bookId).SingleOrDefaultAsync();
+            if (mark != null) return BadRequest("این کتاب قبلا ذخیره شده است");
             Bookmark bookmark = new Bookmark()
             {
                 book=book,
@@ -461,6 +465,47 @@ namespace Event_Creator.Controllers
             await _appContext.SaveChangesAsync();
             return Ok("کتاب به لیست افزوده شد");
         }  
+
+        [HttpGet]
+        [Authorize]
+        [Route("[action]")]
+        public async Task<IActionResult> GetUserBookmarks()
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            User user = await _appContext.Users.Where(x => x.UserId == userId).SingleAsync();
+            await _appContext.Entry(user).Collection(x => x.bookmarks).LoadAsync();
+            foreach(var mark in user.bookmarks)
+            {
+                await _appContext.Entry(mark).Reference(x => x.book).LoadAsync();
+            }
+            return Ok(user.bookmarks);
+        }
+
+        [HttpDelete]
+        [Authorize]
+        [Route("[action]/{bookId}")]
+        public async Task<IActionResult> DeleteBookmark(long bookId)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            Bookmark bookmark = await _appContext.bookmarks.Include(x => x.book).Where(x => x.userId == userId && x.book.BookId == bookId).SingleOrDefaultAsync();
+            if (bookmark == null) return BadRequest("چنین کتابی ذخیره نشده است");
+            _appContext.bookmarks.Remove(bookmark);
+            await _appContext.SaveChangesAsync();
+            return Ok("کتاب مورد نظر حذف شد");
+        }
+
 
         public enum Status
         {
