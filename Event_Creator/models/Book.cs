@@ -27,7 +27,13 @@ namespace Event_Creator.models
 
         public long views { get; set; }
 
+        public SellStatus sellStatus { get; set; }
+
+        public long buyerId { get; set; }
+
         public long bookmarks { get; set; }
+
+        public bool ShouldSerializebuyerId() {return false; }
 
         public bool ShouldSerializeCategoryId()
         {
@@ -67,6 +73,13 @@ namespace Event_Creator.models
     {
         DisableUserAndCategory,
         EnableUserAndCategory
+    }
+
+    public enum SellStatus
+    {
+        none,
+        AuthenticatedBuyer,
+        unAuthenticatedBuyer
     }
 
 
