@@ -434,10 +434,6 @@ namespace Event_Creator.Controllers
         }
 
 
-
-
-
-
         public enum Status
         {
             all,
