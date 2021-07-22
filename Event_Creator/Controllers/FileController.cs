@@ -60,6 +60,9 @@ namespace Event_Creator.Controllers
             return Ok("عکس پروفایل اضافه شد");
         }
 
+        
+
+
         public enum Image
         {
             book,

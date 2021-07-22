@@ -33,6 +33,9 @@ namespace Event_Creator.models
         [Required]
         [Column(TypeName ="nvarchar(30)")]
         public string LastName { get; set; }
+        [Column(TypeName ="nvarchar(255)")] 
+        public string Address { get; set; }
+
         public bool Enable { get; set; }
         [JsonIgnore]
         public Role role { get; set; }
