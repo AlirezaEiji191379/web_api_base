@@ -506,6 +506,82 @@ namespace Event_Creator.Controllers
             return Ok("کتاب مورد نظر حذف شد");
         }
 
+        [HttpPost]
+        [Authorize]
+        [Route("[action]")]
+        public async Task<IActionResult> AddBuyer([FromBody] BookBuySellRequest request)
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            Book book = await _appContext.books.Where(x => x.UserId == userId && x.BookId == request.BookId).SingleOrDefaultAsync();
+            if(book == null)
+            {
+                return StatusCode(404,"چنین کتابی وجود ندارد");
+            }
+            if (book.sellStatus !=SellStatus.none)
+            {
+                return StatusCode(403,"این کتاب قبلا فروخته شده است");
+            }
+            if(request.username !="" && request.username != null)
+            {
+                User user = await _appContext.Users.Where(x => x.Username == request.username).SingleOrDefaultAsync();
+                if (user == null)
+                {
+                    return StatusCode(404, "چنین کاربری وجود ندارد");
+                }
+                if(user.UserId == userId)
+                {
+                    return StatusCode(403,"شما نمیتوانید کتاب را به خودتان بفروشید");
+                }
+                book.buyerId = user.UserId;
+                book.sellStatus = SellStatus.AuthenticatedBuyer;
+            }
+            else
+            {
+                book.sellStatus = SellStatus.unAuthenticatedBuyer;
+            }
+            _appContext.books.Update(book);
+            await _appContext.SaveChangesAsync();
+            return Ok("کتاب به لیست فروخته شده ها افزوده شد");
+        }
+
+        [HttpGet]
+        [Authorize]
+        [Route("[action]")]
+        public async Task<IActionResult> GetBoughtBooks()
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            List<Book> bought = await _appContext.books.Where(x => x.buyerId == userId).ToListAsync();
+            return Ok(bought);
+        }
+
+        [HttpGet]
+        [Authorize]
+        [Route("[action]")]
+        public async Task<IActionResult> GetSoldBooks()
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            List<Book> sold = await _appContext.books.Where(x => x.UserId == userId && x.sellStatus != SellStatus.none).ToListAsync();
+            return Ok(sold);
+        }
+        
 
         public enum Status
         {
