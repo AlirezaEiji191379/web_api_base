@@ -33,17 +33,11 @@ namespace Event_Creator.Controllers
             if(kind==Image.book) path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books"));
             else path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users"));
             string[] files = Directory.GetFiles(path);
-            foreach(var file in files)
-            {
-                if (file.Contains(imageId))
-                {
-                    var image = System.IO.File.OpenRead(file);
-                    string content_Type = "image/" + Path.GetExtension(file).Substring(1);
-                    return File(image , content_Type);
-                }
-            }
-            return NotFound();
-
+            string downlaodPaht = Directory.GetFiles(path).Where(x => x.Contains(imageId.ToString())).SingleOrDefault();
+            if(downlaodPaht==null) return NotFound("چنین فایلی موجود نیست");
+            var image = System.IO.File.OpenRead(downlaodPaht);
+            string content_Type = "image/" + Path.GetExtension(downlaodPaht).Substring(1);
+            return File(image, content_Type);
         }
 
         [Authorize]

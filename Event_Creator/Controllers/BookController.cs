@@ -303,6 +303,12 @@ namespace Event_Creator.Controllers
             List<Bookmark> bookmarks = await _appContext.bookmarks.Include(x => x.book).Where(x => x.book.BookId==bookId).ToListAsync();
             _appContext.bookmarks.RemoveRange(bookmarks);
             await _appContext.SaveChangesAsync();
+            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books"));
+            List<string> files = Directory.GetFiles(path).Where(x => x.Contains(bookId.ToString())).ToList();
+            foreach (var file in files)
+            {
+                System.IO.File.Delete(file);
+            }
             return Ok("کتاب مورد نظر حذف شد");
         }
 
