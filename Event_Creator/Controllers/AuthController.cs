@@ -227,9 +227,9 @@ namespace Event_Creator.Controllers
         {
             var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
 
-            ///return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
-            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
-            return path.ToString();
+            return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
+           // var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
+            //return path.ToString();
         }
 
 
