@@ -43,14 +43,14 @@ namespace Event_Creator.models
         public ICollection<Book> books { get; set; }
         public ICollection<Bookmark> bookmarks { get; set; }
 
-        public bool ShouldSerialzebookmarks()
+        public bool ShouldSerializebookmarks()
         {
             return false;
         }
-        public bool ShouldSerializeUserId()
-        {
-            return false;
-        }
+        //public bool ShouldSerializeUserId()
+        //{
+        //    return false;
+        //}
 
         public bool ShouldSerializePassword()
         {

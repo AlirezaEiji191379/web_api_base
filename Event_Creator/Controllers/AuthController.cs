@@ -222,7 +222,7 @@ namespace Event_Creator.Controllers
         }
 
         [Route("[action]")]
-        //[Authorize(Roles ="User")]
+        [Authorize]
         public string test()
         {
             var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));

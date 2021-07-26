@@ -181,7 +181,21 @@ namespace Event_Creator.Controllers
             return Ok();
         }
 
-
+        [HttpGet]
+        [Authorize]
+        [Route("action]")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            User user = await _appContext.Users.Where(x => x.UserId == userId).SingleOrDefaultAsync();
+            return Ok(user);
+        }
 
 
 
