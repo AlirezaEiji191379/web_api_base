@@ -110,7 +110,7 @@ namespace Event_Creator.Controllers
             if (failedLogin != null) _appContext.failedLogins.Remove(failedLogin);
             await _appContext.verifications.AddAsync(newVerification);
             await _appContext.SaveChangesAsync();
-            return Ok(Information.okSignIn);
+            return Ok("ok");
         }
 
 

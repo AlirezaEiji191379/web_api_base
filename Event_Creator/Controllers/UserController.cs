@@ -61,7 +61,7 @@ namespace Event_Creator.Controllers
             };
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
-            return Ok(Information.okSignUp);
+            return Ok("ok");
         }
 
 
@@ -183,7 +183,7 @@ namespace Event_Creator.Controllers
 
         [HttpGet]
         [Authorize]
-        [Route("action]")]
+        [Route("[action]")]
         public async Task<IActionResult> GetProfile()
         {
             var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");

@@ -52,7 +52,7 @@ namespace Event_Creator.Controllers
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.failedVerification);
+                return BadRequest("you must reSignUp");
             }
 
             User user = null;
@@ -63,7 +63,7 @@ namespace Event_Creator.Controllers
              _appContext.Users.Remove(user);
              _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
-             return BadRequest(Errors.exceedVerification);
+             return BadRequest("you must reSignUp");
             }
 
             if (verification.VerificationCode != code)
@@ -71,7 +71,7 @@ namespace Event_Creator.Controllers
               verification.Requested++;
               _appContext.verifications.Update(verification);
               await _appContext.SaveChangesAsync();
-              return BadRequest(Errors.failedVerification);
+              return BadRequest("wrong Code");
             }
 
               user =await _appContext.Users.SingleAsync(a => a.Username == username);
@@ -80,7 +80,7 @@ namespace Event_Creator.Controllers
              _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
 
-            return Ok(Information.okVerifySignUp);
+            return Ok("ok");
         }
 
 

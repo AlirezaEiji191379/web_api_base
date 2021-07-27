@@ -24,20 +24,38 @@ namespace Event_Creator.Controllers
         {
             _appContext = context;
         }
-        
+
         [HttpGet]
         [Route("[action]/{imageId}")]
-        public IActionResult DownloadImage(string imageId,Image kind)
+        public IActionResult DownloadImage(string imageId, Image kind)
         {
             string path = null;
-            if(kind==Image.book) path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books"));
+            if (kind == Image.book) path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books"));
             else path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users"));
             string[] files = Directory.GetFiles(path);
-            string downlaodPaht = Directory.GetFiles(path).Where(x => x.Contains(imageId.ToString())).SingleOrDefault();
-            if(downlaodPaht==null) return NotFound("چنین فایلی موجود نیست");
-            var image = System.IO.File.OpenRead(downlaodPaht);
-            string content_Type = "image/" + Path.GetExtension(downlaodPaht).Substring(1);
-            return File(image, content_Type);
+            foreach (var file in files)
+            {
+                if (file.Contains(imageId))
+                {
+                    var image = System.IO.File.OpenRead(file);
+                    string content_Type = "image/" + Path.GetExtension(file).Substring(1);
+                    return File(image, content_Type);
+                }
+            }
+            if (kind == Image.user) { 
+                return File(System.IO.File.OpenRead(path + "\\user.png"), "image/png");
+            }
+            else if (kind == Image.book){ 
+                return File(System.IO.File.OpenRead(path + "\\empty.jpg"), "image/jpg");
+            }
+            return NotFound();
+            //string downloadPath = Directory.GetFiles(path).Where(x => x.Contains(imageId.ToString())).FirstOrDefault();
+            ////Console.WriteLine(downlaodPath);
+
+            ////if (downlaodPath == null) return NotFound("چنین فایلی موجود نیست");
+            //var image = System.IO.File.OpenRead(downloadPath);
+            //string content_Type = "image/" + Path.GetExtension(downloadPath).Substring(1);
+            //return File(image, content_Type);
         }
 
         [Authorize]
