@@ -22,21 +22,19 @@ namespace Event_Creator.Other.MiddleWare
             _next = next;
         }
 
-        public async Task Invoke(HttpContext httpContext , ApplicationContext dbContext , IUserService userService)
+        public async Task Invoke(HttpContext httpContext , ApplicationContext dbContext , IUserService userService,IJwtService _jwtService)
         {
             
             
-            if (httpContext.Request.Headers.ContainsKey("Authorization")== false) {
+            if (httpContext.Request.Headers.ContainsKey("Authorization")== false && httpContext.Request.Cookies["access-token"]==null) {
+                await _next(httpContext);
+            }else if (httpContext.Request.Headers.ContainsKey("Authorization") == true && httpContext.Request.Cookies["access-token"] != null)
+            {
                 await _next(httpContext);
             }
             else
             {
-                var authorizationHeader = httpContext.Request.Headers.Single(x => x.Key.Equals("Authorization"));
-                var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-                var handler = new JwtSecurityTokenHandler();
-                var jsonToken = handler.ReadToken(stream);
-                var tokenS = jsonToken as JwtSecurityToken;
-                var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
+                string jti = _jwtService.getJwtIdFromJwt(httpContext);
                 /// if the jwt access token was revoked! 
                 if (await dbContext.jwtBlackLists.SingleOrDefaultAsync(x => x.jwtToken.Equals(jti)) != null) {
                     httpContext.Response.StatusCode = 401;
