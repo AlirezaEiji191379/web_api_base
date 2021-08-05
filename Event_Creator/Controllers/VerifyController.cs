@@ -162,14 +162,16 @@ namespace Event_Creator.Controllers
                 {
                     /// securing cookies! with secure!
                     HttpOnly = true,
-                    SameSite = SameSiteMode.Lax
+                    SameSite = SameSiteMode.Lax,
+                    Expires=DateTime.Now.AddDays(7)
                 });
 
                 Response.Cookies.Append("refresh-token",refreshToken.Token,new CookieOptions()
                 {
                     /// securing cookies! with secure!
                     HttpOnly = true,
-                    SameSite = SameSiteMode.Lax
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTime.Now.AddDays(7)
                 }
                 );
 

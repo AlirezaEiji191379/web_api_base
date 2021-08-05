@@ -285,14 +285,16 @@ namespace Event_Creator.Other.Services
                 {
                     /// securing cookies! with secure!
                     HttpOnly = true,
-                    SameSite = SameSiteMode.Lax
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTime.Now.AddDays(7)
                 });
 
                 httpContext.Response.Cookies.Append("refresh-token", newrefreshToken.Token, new CookieOptions()
                 {
                     /// securing cookies! with secure!
                     HttpOnly = true,
-                    SameSite = SameSiteMode.Lax
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTime.Now.AddDays(7)
                 }
                 );
 
