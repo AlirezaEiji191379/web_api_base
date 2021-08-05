@@ -22,6 +22,7 @@ namespace Event_Creator.Controllers
     {
         private readonly ApplicationContext _appContext;
         private readonly IUserService _userService;
+        private readonly IJwtService _jwtService;
         public UserController (ApplicationContext applicationContext,IUserService userService)
         {
             _appContext = applicationContext;
@@ -70,13 +71,8 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> changePassword([FromBody] PasswodChangeRequest changeRequest)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(uid.ToString()));
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             TextPart text = null;
             if (_userService.Check(user.Password , changeRequest.oldPassword) == false)
             {
@@ -155,13 +151,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> Update([FromBody] UserUpdateRequet requet)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             User user = await _appContext.Users.Where(x => x.UserId ==userId).SingleOrDefaultAsync();
             if (user == null) return BadRequest("چنین کاربری موجود نیست");
             if (requet.updateField == UserUpdateField.firstname)
@@ -186,13 +176,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> GetProfile()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             User user = await _appContext.Users.Where(x => x.UserId == userId).SingleOrDefaultAsync();
             return Ok(user);
         }

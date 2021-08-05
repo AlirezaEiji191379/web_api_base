@@ -192,13 +192,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{code}")]
         public async Task<IActionResult> VerifyChangePassword(string username, int code)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId==userId && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
             if (verification == null)
             {

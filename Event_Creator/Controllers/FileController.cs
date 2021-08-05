@@ -1,5 +1,6 @@
 ﻿using BrunoZell.ModelBinding;
 using Event_Creator.models;
+using Event_Creator.Other.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,10 +20,12 @@ namespace Event_Creator.Controllers
 
     {
         private readonly ApplicationContext _appContext;
+        private readonly IJwtService _jwtService;
 
-        public FileController(ApplicationContext context)
+        public FileController(ApplicationContext context, IJwtService jwtService)
         {
             _appContext = context;
+            _jwtService = jwtService;
         }
 
         [HttpGet]
@@ -63,13 +66,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> UploadProfile(IFormFile profile)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Console.WriteLine(profile.FileName);
             string name = userId.ToString() + Path.GetExtension(profile.FileName).ToLower();
             var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users", name));
@@ -85,13 +82,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> AddBookImage(IFormFile image,long bookId)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == userId).SingleOrDefaultAsync();
             if (book == null) return StatusCode(404,"چنین کتابی موجود نیست");
             if (book.imageCount == 4) return StatusCode(403,"تعداد تصاویر حداکثر 4 تا میباشد");
@@ -112,13 +103,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{bookId}/{imageId}")]
         public async Task<IActionResult> DeleteBookImage(long bookId, int imageId)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == userId).SingleOrDefaultAsync();
             if (book == null) return StatusCode(404, "چنین کتابی موجود نیست");
             string name = book.BookId.ToString() + "_" + imageId.ToString();
@@ -144,13 +129,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public IActionResult DeleteProfileImage()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users"));
             string deletePath = Directory.GetFiles(path).Where(x => x.Contains(userId.ToString())).SingleOrDefault();
             if(deletePath == null) return StatusCode(404, "چنین عکسی وجود ندارد");
