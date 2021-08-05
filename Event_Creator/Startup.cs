@@ -55,6 +55,7 @@ namespace Event_Creator
             services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                
             })
             .AddJwtBearer(jwt => {
                 jwt.RequireHttpsMetadata = false;
@@ -73,8 +74,24 @@ namespace Event_Creator
                     IssuerSigningKey = rsa,
                     //ClockSkew = TimeSpan.FromSeconds(30)
                 };
+                jwt.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies["access-token"];
+                        return Task.CompletedTask;
+                    },
+                };
+
             });
             services.AddHttpContextAccessor();
+            services.AddAntiforgery( options=>
+            {
+                options.HeaderName = "X-CSRF-TOKEN";
+                options.Cookie.Name = "CSRF-TOKEN";
+                options.Cookie.HttpOnly = false;
+            }
+            );
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));
             services.AddControllers().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddScoped<IUserService,UserService>();
@@ -90,7 +107,6 @@ namespace Event_Creator
             }
 
             //app.UseHttpsRedirection();
-
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

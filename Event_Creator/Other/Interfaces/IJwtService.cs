@@ -11,7 +11,13 @@ namespace Event_Creator.Other.Interfaces
     {
         Task<string> JwtTokenGenerator(long userId , string jti);
         Task<RefreshToken> GenerateRefreshToken(string jwtId, long userId , HttpContext httpContext,bool refresh, int priorityNum);
-        Task<AuthResponse> RefreshToken(RefreshRequest refreshRequest , HttpContext httpContext);
+        Task<AuthResponseMobile> RefreshTokenMobile(RefreshRequest refreshRequest , HttpContext httpContext);
+
+        Task<AuthResponseWeb> RefreshTokenWeb(HttpContext httpContext);
+
+        long getUserIdFromJwt(HttpContext httpContext);
+
+        string getJwtIdFromJwt(HttpContext httpContext);
 
     }
 }

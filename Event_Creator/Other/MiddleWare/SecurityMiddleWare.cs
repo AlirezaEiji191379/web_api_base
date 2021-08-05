@@ -45,16 +45,16 @@ namespace Event_Creator.Other.MiddleWare
                 }
                 RefreshToken refresh = await dbContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
                 string agent = httpContext.Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent")).ToString();
-                if (refresh.UserAgent.Equals(agent) == false){
-                    refresh.Revoked = true;
-                    await dbContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
-                        jwtToken=refresh.JwtTokenId
-                    });
-                    httpContext.Response.StatusCode = 403;
-                    await httpContext.Response.WriteAsync("you must relogin");
-                    await dbContext.SaveChangesAsync();
-                    return;
-                }
+                //if (refresh.UserAgent.Equals(agent) == false){
+                //    refresh.Revoked = true;
+                //    await dbContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
+                //        jwtToken=refresh.JwtTokenId
+                //    });
+                //    httpContext.Response.StatusCode = 403;
+                //    await httpContext.Response.WriteAsync("you must relogin");
+                //    await dbContext.SaveChangesAsync();
+                //    return;
+                //}
                 string ip = httpContext.Connection.RemoteIpAddress.ToString();
                 if (ip != refresh.ipAddress)
                 {

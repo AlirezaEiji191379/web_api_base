@@ -44,7 +44,7 @@ namespace Event_Creator.Controllers
             User user = await _appContext.Users.Where(x => x.Username.Equals(loginRequest.Username)).SingleOrDefaultAsync();
             if (user == null) return NotFound(Errors.wrongAuth);
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(loginRequest.Username) && x.usage==Usage.Login).FirstOrDefaultAsync();
-            if(verification!=null) return BadRequest(Information.okSignUp);
+            if(verification!=null) return BadRequest("ok");
             if (user.Enable == false)
             {
                 return BadRequest(Errors.notEnabledLogin);
@@ -119,12 +119,7 @@ namespace Event_Creator.Controllers
         [Authorize]
         public async Task<IActionResult> logout()
         {
-            var authorizationHeader =Request.Headers.Single(x => x.Key=="Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
+            string jti = _jwtService.getJwtIdFromJwt(HttpContext);
             RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
             if (refreshToken == null) return BadRequest(Errors.NotFoundRefreshToken);
             refreshToken.Revoked = true;
@@ -143,13 +138,8 @@ namespace Event_Creator.Controllers
         [Authorize]
         public async Task<IActionResult> terminateAllSessions()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
-            RefreshToken refreshToken = await _appContext.refreshTokens.Include(x => x.user).SingleOrDefaultAsync(x => x.JwtTokenId == jti.ToString());
+            string jti = _jwtService.getJwtIdFromJwt(HttpContext);
+            RefreshToken refreshToken = await _appContext.refreshTokens.Include(x => x.user).SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(refreshToken.user.UserId));
             await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
             List<RefreshToken> allUserTokens = user.RefreshTokens.ToList().FindAll(x => x.Priority > refreshToken.Priority);
@@ -173,13 +163,8 @@ namespace Event_Creator.Controllers
         [Authorize]
         public async Task<IActionResult> TerminateOneSession(int priority)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
-            RefreshToken requester = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
+            string jti = _jwtService.getJwtIdFromJwt(HttpContext);
+            RefreshToken requester = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
             if(requester.Priority >= priority)
             {
                 return StatusCode(403,"شما به دلایل امنیتی اجازه ندارید مابقی نشست هایی که قبل از شما ورود نموده اند را حذف کنید");
@@ -201,13 +186,8 @@ namespace Event_Creator.Controllers
         [Authorize]
         public async Task<List<DeviceResponse>> getAllDevices()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(uid));
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             await _appContext.Entry(user).Collection(x => x.RefreshTokens).LoadAsync();
             List<RefreshToken> allUserToken = user.RefreshTokens.ToList();
             List<DeviceResponse> allDevices = new List<DeviceResponse>();
@@ -223,13 +203,11 @@ namespace Event_Creator.Controllers
 
         [Route("[action]")]
         [Authorize]
+        //[ValidateAntiForgeryToken]
         public string test()
         {
-            var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
-
-            return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
-           // var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
-            //return path.ToString();
+           // var authorization = Request.Cookies["jwtAccessToken"];
+            return "reza";
         }
 
 

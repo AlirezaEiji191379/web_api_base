@@ -1,5 +1,6 @@
 ﻿using Event_Creator.models;
 using Event_Creator.Other;
+using Event_Creator.Other.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,10 +20,12 @@ namespace Event_Creator.Controllers
     public class BookController : ControllerBase
     {
         private readonly ApplicationContext _appContext;
-        private readonly int limit = 3;
-        public BookController(ApplicationContext applicationContext)
+        private readonly IJwtService _jwtService;
+        private readonly int limit = 4;
+        public BookController(ApplicationContext applicationContext, IJwtService jwtService)
         {
             _appContext = applicationContext;
+            _jwtService = jwtService;
         }
 
 
@@ -31,8 +34,10 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> AddBook([FromForm]string bookJson,List<IFormFile> bookImages)
         {
-
+           // Console.WriteLine("reza");
             long volSum = 0;
+            //if (bookImages == null) Console.WriteLine("reza eiji");
+            Console.WriteLine(bookImages.Count);
             if(bookImages ==null || bookImages.Count==0) return BadRequest("حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود");
             if (bookImages.Count > 4) return BadRequest("حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود");
             foreach(var file in bookImages)
@@ -48,6 +53,7 @@ namespace Event_Creator.Controllers
             try
             {
                 Book book = JsonConvert.DeserializeObject<Book>(bookJson);
+                //Console.WriteLine(book.BookName);
                 if (book.BookName == null || book.BookName=="") return BadRequest("نام کتاب را وارد کنید");
                 if (book.PublisherName == null || book.PublisherName == "") return BadRequest("نام ناشر کتاب را وارد کنید");
                 if (book.Publication == 0) { return BadRequest("لظفا سال کتاب را وارد کنید"); }
@@ -63,14 +69,9 @@ namespace Event_Creator.Controllers
                 var now = DateTime.Now;
                 var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
                 book.addedDate = unixTimeSeconds;
-                var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-                var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-                var handler = new JwtSecurityTokenHandler();
-                var jsonToken = handler.ReadToken(stream);
-                var tokenS = jsonToken as JwtSecurityToken;
-                var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+                long userId = _jwtService.getUserIdFromJwt(HttpContext);
                 //book.user = await _appContext.Users.Where(x => x.UserId == Convert.ToInt64(uid)).SingleAsync();
-                book.UserId = Convert.ToInt64(uid);
+                book.UserId = userId;
                 book.imageCount = bookImages.Count;
                 book.Exchangable = false;
                 if(book.exchanges!=null && book.exchanges.Count > 0)
@@ -96,11 +97,12 @@ namespace Event_Creator.Controllers
                     i++;
                 }
              
-                return Ok();
+                return Ok("ok");
             }
-            catch
+            catch(Exception e)
             {
-               return BadRequest("");
+                Console.WriteLine(e.ToString());
+               return BadRequest("fghfghfghfgh");
             }
         }
        
@@ -109,13 +111,8 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookName([FromBody]UpdateBookNameRequest update)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == userId &&
              x.BookId == update.BookId).SingleOrDefaultAsync();
 
             if(book == null)
@@ -133,13 +130,8 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookPrice([FromBody] UpdateBookPriceRequest update)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == userId &&
              x.BookId == update.BookId).SingleOrDefaultAsync();
 
             if (book == null)
@@ -158,13 +150,8 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookCategory([FromBody]UpdateBookCategoryRequest update)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == userId &&
              x.BookId == update.BookId).SingleOrDefaultAsync();
 
             if (book == null)
@@ -192,13 +179,8 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookExchangeName([FromBody] UpdateExchangeBookNameRequest update)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == userId &&
              x.BookId == update.BookId).SingleOrDefaultAsync();
 
             if (book == null)
@@ -224,13 +206,8 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> AddExchangeBook([FromBody]AddExchangeBookRequest update)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == Convert.ToInt64(uid) &&
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            Book book = await _appContext.books.Include(x => x.user).Where(x => x.user.UserId == userId &&
              x.BookId == update.BookId).SingleOrDefaultAsync();
 
             if (book == null)
@@ -250,12 +227,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{exchangeId}")]
         public async Task<IActionResult> DeleteExchangeBook(long exchangeId)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
 
             Exchange exchange = await _appContext.exchanges.Where(x => x.ExchangeId == exchangeId).SingleOrDefaultAsync();
             if (exchange == null)
@@ -263,7 +235,7 @@ namespace Event_Creator.Controllers
                 return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
             }
             long bookId = exchange.bookToExchangeId;
-            Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == Convert.ToInt64(uid)).SingleOrDefaultAsync();
+            Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == userId).SingleOrDefaultAsync();
             if(book == null)
             {
                 return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
@@ -278,13 +250,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> DeleteBook(long bookId)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book book = await _appContext.books.Where(x => x.BookId == bookId).SingleOrDefaultAsync();
             if (book == null)
             {
@@ -320,13 +286,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public IActionResult GetAllBooksByUserId()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book.jsonStatus = JsonStatus.DisableUserAndCategory;
             var allBooks = _appContext.books.Include(x => x.Category).Include(x => x.user).Where(x => x.UserId == userId).ToList();
             return Ok(allBooks);
@@ -336,6 +296,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> GetBookById(long bookId)
         {
+            Book.exchange = exchangeStatus.yes;
             Book book = await _appContext.books.Where(x => x.BookId==bookId).SingleOrDefaultAsync();
             if (book == null)
             {
@@ -355,7 +316,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{categoryId}")]
         public async Task<IActionResult> GetAllBooksByCategory(long categoryId,Status status,Sort sort,double min_price=-1,double max_price=-1,int index=1)
         {
-
+            //Book.jsonStatus = JsonStatus.DisableUserAndCategory;
             int skip = (index - 1) * limit;
             List<Book> books = null;
             if(status == Status.all)
@@ -450,13 +411,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> Bookmark(long bookId)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book book = await _appContext.books.Where(x => x.BookId==bookId).SingleOrDefaultAsync();
             if(book == null)
             {
@@ -481,13 +436,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> GetUserBookmarks()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             User user = await _appContext.Users.Where(x => x.UserId == userId).SingleAsync();
             await _appContext.Entry(user).Collection(x => x.bookmarks).LoadAsync();
             foreach(var mark in user.bookmarks)
@@ -504,13 +453,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> DeleteBookmark(long bookId)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Bookmark bookmark = await _appContext.bookmarks.Include(x => x.book).Where(x => x.userId == userId && x.book.BookId == bookId).SingleOrDefaultAsync();
             if (bookmark == null) return BadRequest("چنین کتابی ذخیره نشده است");
             _appContext.bookmarks.Remove(bookmark);
@@ -523,13 +466,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> AddBuyer([FromBody] BookBuySellRequest request)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book book = await _appContext.books.Where(x => x.UserId == userId && x.BookId == request.BookId).SingleOrDefaultAsync();
             if(book == null)
             {
@@ -567,13 +504,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> GetBoughtBooks()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             List<Book> bought = await _appContext.books.Where(x => x.buyerId == userId).ToListAsync();
             return Ok(bought);
         }
@@ -583,13 +514,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> GetSoldBooks()
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book.jsonStatus = JsonStatus.DisableUserAndCategory;
             List<Book> sold = await _appContext.books.Where(x => x.UserId == userId && x.sellStatus != SellStatus.none).ToListAsync();
             return Ok(sold);

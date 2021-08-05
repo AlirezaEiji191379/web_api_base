@@ -12,6 +12,7 @@ using MimeKit;
 using Microsoft.AspNetCore.Authorization;
 using Event_Creator.models.Security;
 using System.Security.Cryptography;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Event_Creator.Controllers
 {
@@ -84,7 +85,8 @@ namespace Event_Creator.Controllers
         }
 
 
-        [Route("[action]/{username}/{code}")]
+        [Route("[action]/Web/{username}/{code}")]
+        [Route("[action]/Mobile/{username}/{code}")]
         public async Task<IActionResult> VerifyLogin(string username, int code)
         {
             LockedAccount isLocked = await _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
@@ -153,23 +155,51 @@ namespace Event_Creator.Controllers
             RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId, user.UserId, HttpContext,false,0);
             await _appContext.refreshTokens.AddAsync(refreshToken);
             await _appContext.SaveChangesAsync();
-            AuthResponse response = new AuthResponse()
+            String route = Request.Path.Value.ToString();
+            if (route.Contains("Web"))
             {
-                ErrorList = null,
-                success = true,
-                RefreshToken = refreshToken.Token,
-                JwtAccessToken = jwtAccessToken,
-                statusCode = 200,
-            };
-            return Ok(response);
+                Response.Cookies.Append("access-token", jwtAccessToken, new CookieOptions()
+                {
+                    /// securing cookies! with secure!
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.Lax
+                });
+
+                Response.Cookies.Append("refresh-token",refreshToken.Token,new CookieOptions()
+                {
+                    /// securing cookies! with secure!
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.Lax
+                }
+                );
+
+                return Ok("ok");
+            }
+            else
+            {
+                AuthResponseMobile response = new AuthResponseMobile()
+                {
+                    ErrorList = null,
+                    RefreshToken = refreshToken.Token,
+                    JwtAccessToken = jwtAccessToken,
+                    statusCode = 200,
+                };
+                return Ok(response);
+            }
         }
 
-
         [Authorize]
-        [Route("[action]/{username}/{code}")]
+        [Route("[action]/{code}")]
         public async Task<IActionResult> VerifyChangePassword(string username, int code)
         {
-            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(username) && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
+            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
+            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(stream);
+            var tokenS = jsonToken as JwtSecurityToken;
+            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
+            long userId = Convert.ToInt64(uid);
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId==userId && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
             if (verification == null)
             {
                 return BadRequest(Errors.NullVerification);

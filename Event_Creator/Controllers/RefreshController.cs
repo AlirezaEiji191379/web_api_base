@@ -27,12 +27,20 @@ namespace Event_Creator.Controllers
             _appContext = applicationContext;
         }
 
-        [Route("")]
-        [HttpPost]
-        public async Task<IActionResult> GetRefreshToken([FromBody] RefreshRequest refreshRequest)
+        [Route("Mobile")]
+        [HttpPut]
+        public async Task<IActionResult> GetRefreshTokenMobile([FromBody] RefreshRequest refreshRequest)
         {
-            AuthResponse authResponse = await _jwtService.RefreshToken(refreshRequest,HttpContext);
-            return Ok(authResponse);
+            AuthResponseMobile authResponse = await _jwtService.RefreshTokenMobile(refreshRequest,HttpContext);
+            return StatusCode(authResponse.statusCode,authResponse);
+        }
+
+        [Route("Web")]
+        [HttpPut]
+        public async Task<IActionResult> GetRefreshTokenWeb([FromBody] RefreshRequest refreshRequest)
+        {
+            AuthResponseWeb authResponse = await _jwtService.RefreshTokenWeb(this.HttpContext);
+            return StatusCode(authResponse.statusCode,authResponse);
         }
 
 
