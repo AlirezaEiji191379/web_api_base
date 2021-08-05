@@ -37,10 +37,12 @@ namespace Event_Creator.Controllers
             _jwtConfig = jwtConfig;
         }
 
+
         [Route("[action]")]
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
+            Console.WriteLine("reza");
             User user = await _appContext.Users.Where(x => x.Username.Equals(loginRequest.Username)).SingleOrDefaultAsync();
             if (user == null) return NotFound(Errors.wrongAuth);
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(loginRequest.Username) && x.usage==Usage.Login).FirstOrDefaultAsync();

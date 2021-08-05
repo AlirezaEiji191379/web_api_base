@@ -87,9 +87,10 @@ namespace Event_Creator
             services.AddHttpContextAccessor();
             services.AddAntiforgery( options=>
             {
-                options.HeaderName = "X-CSRF-TOKEN";
+                options.HeaderName = "X-CSRF-Header";
                 options.Cookie.Name = "CSRF-TOKEN";
                 options.Cookie.HttpOnly = false;
+                options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
             }
             );
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));
