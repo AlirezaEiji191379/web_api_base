@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Event_Creator.models.Security;
 using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Antiforgery;
 
 namespace Event_Creator.Controllers
 {
@@ -22,13 +23,15 @@ namespace Event_Creator.Controllers
     public class VerifyController : ControllerBase
     {
         private readonly ApplicationContext _appContext;
+        private IAntiforgery _antiForgery;
         private readonly IUserService _userService;
         private readonly IJwtService _jwtService;
-        public VerifyController(ApplicationContext applicationContext, IUserService userService , IJwtService jwtService)
+        public VerifyController(ApplicationContext applicationContext, IUserService userService , IJwtService jwtService, IAntiforgery antiForgery)
         {
             _appContext = applicationContext;
             _userService = userService;
             _jwtService = jwtService;
+            _antiForgery = antiForgery;
         }
 
 
@@ -174,7 +177,7 @@ namespace Event_Creator.Controllers
                     Expires = DateTime.Now.AddDays(7)
                 }
                 );
-
+                _antiForgery.GetAndStoreTokens(HttpContext);
                 return Ok("ok");
             }
             else

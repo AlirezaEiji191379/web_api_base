@@ -212,6 +212,14 @@ namespace Event_Creator.Controllers
             return "reza";
         }
 
+        [Route("[action]")]
+        //[Authorize]
+        //[ValidateAntiForgeryToken]
+        public string testing()
+        {
+            // var authorization = Request.Cookies["jwtAccessToken"];
+            return "reza";
+        }
 
 
 

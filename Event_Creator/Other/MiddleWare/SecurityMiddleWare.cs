@@ -26,10 +26,7 @@ namespace Event_Creator.Other.MiddleWare
         {
             
             
-            if (httpContext.Request.Headers.ContainsKey("Authorization")== false && httpContext.Request.Cookies["access-token"]==null) {
-                await _next(httpContext);
-            }else if (httpContext.Request.Headers.ContainsKey("Authorization") == true && httpContext.Request.Cookies["access-token"] != null)
-            {
+            if (httpContext.User.Identity.IsAuthenticated== false) {
                 await _next(httpContext);
             }
             else
@@ -41,7 +38,25 @@ namespace Event_Creator.Other.MiddleWare
                     await httpContext.Response.WriteAsync("Revoked Token! you must relogin");
                     return;
                 }
-                RefreshToken refresh = await dbContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
+                // here is the code for csrf prevention!
+                if (httpContext.Request.Headers.ContainsKey("Authorization") == false)
+                {
+                    String csrf_cookie = httpContext.Request.Cookies["CSRF-TOKEN"];
+                    String csrf_header = httpContext.Request.Headers["X-CSRF-Header"];
+                    if (csrf_cookie == null || csrf_header == null)
+                    {
+                        httpContext.Response.StatusCode = 400;
+                        await httpContext.Response.WriteAsync("bad Request!");
+                        return;
+                    }
+                    if (csrf_header.Equals(csrf_cookie) == false)
+                    {
+                        httpContext.Response.StatusCode = 400;
+                        await httpContext.Response.WriteAsync("bad Request!");
+                        return;
+                    }
+                }
+                RefreshToken refresh = await dbContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
                 string agent = httpContext.Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent")).ToString();
                 //if (refresh.UserAgent.Equals(agent) == false){
                 //    refresh.Revoked = true;
