@@ -1,5 +1,6 @@
 ﻿using BrunoZell.ModelBinding;
 using Event_Creator.models;
+using Event_Creator.Other.Filters;
 using Event_Creator.Other.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -63,6 +64,7 @@ namespace Event_Creator.Controllers
 
         [Authorize]
         [HttpPut]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         public async Task<IActionResult> UploadProfile(IFormFile profile)
         {
@@ -79,6 +81,7 @@ namespace Event_Creator.Controllers
 
         [Authorize]
         [HttpPut]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> AddBookImage(IFormFile image,long bookId)
         {
@@ -100,6 +103,7 @@ namespace Event_Creator.Controllers
         
         [Authorize]
         [HttpDelete]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]/{bookId}/{imageId}")]
         public async Task<IActionResult> DeleteBookImage(long bookId, int imageId)
         {
@@ -126,6 +130,7 @@ namespace Event_Creator.Controllers
 
         [Authorize]
         [HttpDelete]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         public IActionResult DeleteProfileImage()
         {

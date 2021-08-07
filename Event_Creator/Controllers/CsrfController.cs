@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -20,6 +21,8 @@ namespace Event_Creator.Controllers
         }
 
         [Route("")]
+        [HttpGet]
+        [Authorize]
         public IActionResult GenerateAntiForgeryTokens()
         {
             var tokens = _antiForgery.GetAndStoreTokens(HttpContext);

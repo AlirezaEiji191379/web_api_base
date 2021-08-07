@@ -14,6 +14,7 @@ using Event_Creator.models.Security;
 using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Antiforgery;
+using Event_Creator.Other.Filters;
 
 namespace Event_Creator.Controllers
 {
@@ -194,8 +195,9 @@ namespace Event_Creator.Controllers
         }
 
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]/{code}")]
-        public async Task<IActionResult> VerifyChangePassword(string username, int code)
+        public async Task<IActionResult> VerifyChangePassword(int code)
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId==userId && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
@@ -213,7 +215,7 @@ namespace Event_Creator.Controllers
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             if (unixTimeSeconds > verification.expirationTime)
             {
-                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId==userId);
                 _appContext.verifications.Remove(verification);
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
@@ -221,7 +223,7 @@ namespace Event_Creator.Controllers
             }
             if (verification.Requested == 2)
             {
-                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == userId);
                 _appContext.verifications.Remove(verification);
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
@@ -247,7 +249,7 @@ namespace Event_Creator.Controllers
                 //_appContext.refreshTokens.Update(allUserTokens[i]);
             }
             _appContext.refreshTokens.UpdateRange(allUserTokens);
-            change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+            change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == userId);
             _appContext.changePassword.Remove(change);
             _appContext.verifications.Remove(verification);
             change.user.Password = _userService.Hash(change.NewPassword);

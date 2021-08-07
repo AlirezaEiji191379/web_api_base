@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MimeKit;
 using System.IO;
+using Event_Creator.Other.Filters;
 
 namespace Event_Creator.Controllers
 {
@@ -119,6 +120,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         [HttpDelete]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         public async Task<IActionResult> logout()
         {
             string jti = _jwtService.getJwtIdFromJwt(HttpContext);
@@ -138,6 +140,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         [HttpDelete]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         public async Task<IActionResult> terminateAllSessions()
         {
             string jti = _jwtService.getJwtIdFromJwt(HttpContext);
@@ -163,6 +166,7 @@ namespace Event_Creator.Controllers
         [Route("[action]/{priority}")]
         [HttpDelete]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         public async Task<IActionResult> TerminateOneSession(int priority)
         {
             string jti = _jwtService.getJwtIdFromJwt(HttpContext);
@@ -183,9 +187,10 @@ namespace Event_Creator.Controllers
             return Ok();
         }
 
-
+        [HttpGet]
         [Route("[action]")]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         public async Task<List<DeviceResponse>> getAllDevices()
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);

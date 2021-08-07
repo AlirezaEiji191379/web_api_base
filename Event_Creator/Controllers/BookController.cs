@@ -1,5 +1,6 @@
 ﻿using Event_Creator.models;
 using Event_Creator.Other;
+using Event_Creator.Other.Filters;
 using Event_Creator.Other.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -30,6 +31,7 @@ namespace Event_Creator.Controllers
 
 
         [Authorize(Roles ="User")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpPost]
         [Route("[action]")]
         public async Task<IActionResult> AddBook([FromForm]string bookJson,List<IFormFile> bookImages)
@@ -107,6 +109,7 @@ namespace Event_Creator.Controllers
         }
        
         [Authorize(Roles="User")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpPut]
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookName([FromBody]UpdateBookNameRequest update)
@@ -126,6 +129,7 @@ namespace Event_Creator.Controllers
         }
 
         [Authorize(Roles = "User")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpPut]
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookPrice([FromBody] UpdateBookPriceRequest update)
@@ -146,6 +150,7 @@ namespace Event_Creator.Controllers
         
 
         [Authorize(Roles ="User")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpPut]
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookCategory([FromBody]UpdateBookCategoryRequest update)
@@ -175,6 +180,7 @@ namespace Event_Creator.Controllers
         }
 
         [Authorize(Roles = "User")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpPut]
         [Route("[action]")]
         public async Task<IActionResult> UpdateBookExchangeName([FromBody] UpdateExchangeBookNameRequest update)
@@ -202,6 +208,7 @@ namespace Event_Creator.Controllers
         }
 
         [Authorize(Roles = "User")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpPut]
         [Route("[action]")]
         public async Task<IActionResult> AddExchangeBook([FromBody]AddExchangeBookRequest update)
@@ -223,6 +230,7 @@ namespace Event_Creator.Controllers
         
         
         [Authorize(Roles = "User")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpDelete]
         [Route("[action]/{exchangeId}")]
         public async Task<IActionResult> DeleteExchangeBook(long exchangeId)
@@ -246,6 +254,7 @@ namespace Event_Creator.Controllers
         }
 
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpDelete]
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> DeleteBook(long bookId)
@@ -282,6 +291,7 @@ namespace Event_Creator.Controllers
 
 
         [Authorize]
+        //[ServiceFilter(typeof(CsrfActionFilter))]
         [HttpGet]
         [Route("[action]")]
         public IActionResult GetAllBooksByUserId()
@@ -408,6 +418,7 @@ namespace Event_Creator.Controllers
 
         [HttpPut]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> Bookmark(long bookId)
         {
@@ -433,6 +444,7 @@ namespace Event_Creator.Controllers
 
         [HttpGet]
         [Authorize]
+        //[ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         public async Task<IActionResult> GetUserBookmarks()
         {
@@ -450,6 +462,7 @@ namespace Event_Creator.Controllers
 
         [HttpDelete]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]/{bookId}")]
         public async Task<IActionResult> DeleteBookmark(long bookId)
         {
@@ -463,6 +476,7 @@ namespace Event_Creator.Controllers
 
         [HttpPost]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         public async Task<IActionResult> AddBuyer([FromBody] BookBuySellRequest request)
         {

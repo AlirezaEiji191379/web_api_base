@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Event_Creator.models.Security;
+using Event_Creator.Other.Filters;
 
 namespace Event_Creator.Controllers
 {
@@ -71,6 +72,7 @@ namespace Event_Creator.Controllers
 
 
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         [HttpPost]
         public async Task<IActionResult> changePassword([FromBody] PasswodChangeRequest changeRequest)
@@ -152,6 +154,7 @@ namespace Event_Creator.Controllers
 
         [HttpPut]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         public async Task<IActionResult> Update([FromBody] UserUpdateRequet requet)
         {
@@ -177,6 +180,7 @@ namespace Event_Creator.Controllers
 
         [HttpGet]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         public async Task<IActionResult> GetProfile()
         {

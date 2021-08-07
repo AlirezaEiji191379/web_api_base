@@ -1,5 +1,6 @@
 ﻿using Event_Creator.models;
 using Event_Creator.Other;
+using Event_Creator.Other.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ namespace Event_Creator.Controllers
         }
 
         [Authorize(Roles ="Admin")]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [HttpPost]
         [Route("[action]")]
         public async Task<IActionResult> CreateCategory([FromBody] Category category)

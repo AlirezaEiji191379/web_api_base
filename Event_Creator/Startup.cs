@@ -25,6 +25,8 @@ using System.Security.Cryptography;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Event_Creator.Other.MiddleWare;
+using Event_Creator.Other.Filters;
+
 namespace Event_Creator
 {
     public class Startup
@@ -97,6 +99,7 @@ namespace Event_Creator
             services.AddControllers().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<CsrfActionFilter>();
         }
 
 
