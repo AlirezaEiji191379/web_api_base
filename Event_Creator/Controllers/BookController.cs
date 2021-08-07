@@ -36,10 +36,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         public async Task<IActionResult> AddBook([FromForm]string bookJson,List<IFormFile> bookImages)
         {
-           // Console.WriteLine("reza");
             long volSum = 0;
-            //if (bookImages == null) Console.WriteLine("reza eiji");
-            Console.WriteLine(bookImages.Count);
             if(bookImages ==null || bookImages.Count==0) return BadRequest("حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود");
             if (bookImages.Count > 4) return BadRequest("حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود");
             foreach(var file in bookImages)
@@ -103,8 +100,7 @@ namespace Event_Creator.Controllers
             }
             catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
-               return BadRequest("fghfghfghfgh");
+               return BadRequest("bad Request!");
             }
         }
        
