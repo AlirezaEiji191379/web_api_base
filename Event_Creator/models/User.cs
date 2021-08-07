@@ -25,12 +25,12 @@ namespace Event_Creator.models
         public string Email { get; set; }
         [Required]
         [StringLength(11,MinimumLength =11,ErrorMessage ="شماره تلفن همراه معتبر نمی باشد")]
-        [RegularExpression(@"^\(?([0-9]{4})\)?[-.●]?([0-9]{3})[-.●]?([0-9]{4})$")]
+        [RegularExpression(@"^\(?([0-9]{4})\)?[-.●]?([0-9]{3})[-.●]?([0-9]{4})$",ErrorMessage ="لطفا تلفن معتبر وارد کنید")]
         public string PhoneNumber { get; set; }
-        [Required]
+        [Required(ErrorMessage ="لطفا نام خود را وارد کنید")]
         [Column(TypeName ="nvarchar(30)")]
         public string FirstName { get; set; }
-        [Required]
+        [Required(ErrorMessage ="لطفا نام خانوادگی خود را وارد کنید")]
         [Column(TypeName ="nvarchar(30)")]
         public string LastName { get; set; }
         [Column(TypeName ="nvarchar(255)")] 
