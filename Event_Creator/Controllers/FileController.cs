@@ -69,10 +69,9 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> UploadProfile(IFormFile profile)
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
-            Console.WriteLine(profile.FileName);
             string name = userId.ToString() + Path.GetExtension(profile.FileName).ToLower();
             var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users", name));
-            if (System.IO.File.Exists(path)) return StatusCode(403,"شما قبلا عکس پروفایل ذخیره کرده اید");
+            if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
             var fileStream = new FileStream(path, FileMode.Create);
             await profile.CopyToAsync(fileStream);
             fileStream.Close();
