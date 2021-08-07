@@ -23,7 +23,7 @@ namespace Event_Creator.models
         [StringLength(60)]
         [RegularExpression("\\w+([-+.']\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*",ErrorMessage ="لطفا ایمیل معتبر وارد کنید")]
         public string Email { get; set; }
-        [Required]
+        [Required(ErrorMessage ="لطفا شماره تلفن همراه خود را وارد کنید")]
         [StringLength(11,MinimumLength =11,ErrorMessage ="شماره تلفن همراه معتبر نمی باشد")]
         [RegularExpression(@"^\(?([0-9]{4})\)?[-.●]?([0-9]{3})[-.●]?([0-9]{4})$",ErrorMessage ="لطفا تلفن معتبر وارد کنید")]
         public string PhoneNumber { get; set; }
