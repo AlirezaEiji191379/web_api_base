@@ -35,10 +35,14 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> SignUp([FromBody] User user)
         {
-            List<string> duplicationErrors = await _userService.checkUserDuplicate(user);
+            Dictionary<string, string> duplicationErrors = await _userService.checkUserDuplicate(user);
             if (duplicationErrors.Count != 0)
             {
-                return BadRequest(duplicationErrors);
+                return BadRequest(new SignUpDuplicationError()
+                {
+                    errors = duplicationErrors,
+                    statusCode = 400
+                });
             }
             user.Enable = false;
             user.role = Role.User;
