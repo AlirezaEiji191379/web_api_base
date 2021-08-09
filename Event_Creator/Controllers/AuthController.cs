@@ -225,11 +225,12 @@ namespace Event_Creator.Controllers
         //[Authorize(Roles ="User")]
         public string test()
         {
-            var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
+            //var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
 
-            return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
-           // var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
+            //return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
+            // var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
             //return path.ToString();
+            return Directory.GetCurrentDirectory();
         }
 
 

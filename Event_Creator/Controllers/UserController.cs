@@ -183,8 +183,12 @@ namespace Event_Creator.Controllers
 
 
 
-
-
+        [HttpPatch]
+        [Route("[action]")]
+        public async Task<IActionResult> updateUser(User user)
+        {
+            return Ok(user);
+        }
 
 
 
