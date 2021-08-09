@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -10,17 +11,18 @@ namespace Event_Creator.models
         [Required(ErrorMessage ="لطفا دسته بندی را وارد کنید")]
         public long CategoryId { get; set; }
         public Category Category { get; set; }
-
+        public  static exchangeStatus exchange;
         public long UserId { get; set; }
         public User user { get; set; }
         [Required(ErrorMessage ="لطفا نام کتاب را وارد کنید")]
         public string BookName { get; set; }
         public double Price { get; set; }
+        public long Publication { get; set; }
         public long addedDate { get; set; }
         [Required(ErrorMessage ="لطفا نام انتشارات کتاب را وارد کنید")]
         public string PublisherName { get; set; }
-
-        public JsonStatus jsonStatus;
+        public string Writer { get; set; }
+        public static JsonStatus jsonStatus;
         public int imageCount { get; set; }
         public ICollection<Exchange> exchanges { get; set; }
         public bool Exchangable { get; set; }
@@ -51,19 +53,19 @@ namespace Event_Creator.models
 
         public bool ShouldSerializeuser()
         {
-            if(this.jsonStatus==JsonStatus.EnableUserAndCategory)return true;
+            if (jsonStatus == JsonStatus.EnableUserAndCategory) return true;
             return false;
         }
 
         public bool ShouldSerializeexchanges()
         {
-            if (this.jsonStatus == JsonStatus.EnableUserAndCategory) return true;
+            if (jsonStatus == JsonStatus.EnableUserAndCategory && exchange==exchangeStatus.yes) return true;
             return false;
         }
 
         public bool ShouldSerializeCategory()
         {
-            if (this.jsonStatus == JsonStatus.EnableUserAndCategory) return true;
+            if (jsonStatus == JsonStatus.EnableUserAndCategory) return true;
             return false;
         }
 
@@ -71,8 +73,14 @@ namespace Event_Creator.models
 
     public enum JsonStatus
     {
-        DisableUserAndCategory,
-        EnableUserAndCategory
+        EnableUserAndCategory,
+        DisableUserAndCategory
+    }
+
+    public enum exchangeStatus
+    {
+        no,
+        yes
     }
 
     public enum SellStatus

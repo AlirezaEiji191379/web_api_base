@@ -27,16 +27,16 @@ namespace Event_Creator.Other.Services
         }
 
 
-        public async Task<List<string>> checkUserDuplicate(User user)
+        public async Task<Dictionary<string, string>> checkUserDuplicate(User user)
         {
 
-                 List<string> allDuplications = new List<string>();
+                 Dictionary<string,string> allDuplications = new Dictionary<string, string>();
 
-                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.Username == user.Username) != null) allDuplications.Add(Errors.UsernameDuplication);
+                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.Username == user.Username) != null) allDuplications.Add("Username",Errors.UsernameDuplication);
 
-                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.Email == user.Email) != null) allDuplications.Add(Errors.EmailDuplication);
+                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.Email == user.Email) != null) allDuplications.Add("Email",Errors.EmailDuplication);
 
-                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.PhoneNumber == user.PhoneNumber) != null) allDuplications.Add(Errors.PhoneDuplication);
+                 if (await _applicationContext.Users.SingleOrDefaultAsync(a => a.PhoneNumber == user.PhoneNumber) != null) allDuplications.Add("Phonenumber",Errors.PhoneDuplication);
 
                  return allDuplications;
 

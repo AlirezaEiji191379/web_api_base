@@ -22,39 +22,34 @@ namespace Event_Creator.Other.MiddleWare
             _next = next;
         }
 
-        public async Task Invoke(HttpContext httpContext , ApplicationContext dbContext , IUserService userService)
+        public async Task Invoke(HttpContext httpContext , ApplicationContext dbContext , IUserService userService,IJwtService _jwtService)
         {
             
             
-            if (httpContext.Request.Headers.ContainsKey("Authorization")== false) {
+            if (httpContext.User.Identity.IsAuthenticated==false) {
                 await _next(httpContext);
             }
             else
             {
-                var authorizationHeader = httpContext.Request.Headers.Single(x => x.Key.Equals("Authorization"));
-                var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-                var handler = new JwtSecurityTokenHandler();
-                var jsonToken = handler.ReadToken(stream);
-                var tokenS = jsonToken as JwtSecurityToken;
-                var jti = tokenS.Claims.First(claim => claim.Type == "jti").Value;
+                string jti = _jwtService.getJwtIdFromJwt(httpContext);
                 /// if the jwt access token was revoked! 
                 if (await dbContext.jwtBlackLists.SingleOrDefaultAsync(x => x.jwtToken.Equals(jti)) != null) {
                     httpContext.Response.StatusCode = 401;
                     await httpContext.Response.WriteAsync("Revoked Token! you must relogin");
                     return;
                 }
-                RefreshToken refresh = await dbContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti.ToString()));
+                RefreshToken refresh = await dbContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
                 string agent = httpContext.Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent")).ToString();
-                if (refresh.UserAgent.Equals(agent) == false){
-                    refresh.Revoked = true;
-                    await dbContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
-                        jwtToken=refresh.JwtTokenId
-                    });
-                    httpContext.Response.StatusCode = 403;
-                    await httpContext.Response.WriteAsync("you must relogin");
-                    await dbContext.SaveChangesAsync();
-                    return;
-                }
+                //if (refresh.UserAgent.Equals(agent) == false){
+                //    refresh.Revoked = true;
+                //    await dbContext.jwtBlackLists.AddAsync(new JwtBlackList() { 
+                //        jwtToken=refresh.JwtTokenId
+                //    });
+                //    httpContext.Response.StatusCode = 403;
+                //    await httpContext.Response.WriteAsync("you must relogin");
+                //    await dbContext.SaveChangesAsync();
+                //    return;
+                //}
                 string ip = httpContext.Connection.RemoteIpAddress.ToString();
                 if (ip != refresh.ipAddress)
                 {

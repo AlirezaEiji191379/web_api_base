@@ -1,6 +1,7 @@
 ﻿using Event_Creator.models;
 using Event_Creator.Other;
 using Event_Creator.Other.Interfaces;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,21 +19,32 @@ namespace Event_Creator.Controllers
     [ApiController]
     public class RefreshController : ControllerBase
     {
-
+        private IAntiforgery _antiForgery;
         private readonly IJwtService _jwtService;
         private readonly ApplicationContext _appContext;
-        public RefreshController(IJwtService jwtService , ApplicationContext applicationContext)
+        public RefreshController(IJwtService jwtService , ApplicationContext applicationContext, IAntiforgery antiForgery)
         {
             _jwtService = jwtService;
             _appContext = applicationContext;
+            _antiForgery = antiForgery;
         }
 
-        [Route("")]
-        [HttpPost]
-        public async Task<IActionResult> GetRefreshToken([FromBody] RefreshRequest refreshRequest)
+        [Route("Mobile")]
+        [HttpPut]
+        public async Task<IActionResult> GetRefreshTokenMobile([FromBody] RefreshRequest refreshRequest)
         {
-            AuthResponse authResponse = await _jwtService.RefreshToken(refreshRequest,HttpContext);
-            return Ok(authResponse);
+            AuthResponseMobile authResponse = await _jwtService.RefreshTokenMobile(refreshRequest,HttpContext);
+            _antiForgery.GetAndStoreTokens(HttpContext);
+            return StatusCode(authResponse.statusCode,authResponse);
+        }
+
+        [Route("Web")]
+        [HttpPut]
+        public async Task<IActionResult> GetRefreshTokenWeb()
+        {
+            AuthResponseWeb authResponse = await _jwtService.RefreshTokenWeb(this.HttpContext);
+            _antiForgery.GetAndStoreTokens(HttpContext);
+            return StatusCode(authResponse.statusCode,authResponse);            
         }
 
 

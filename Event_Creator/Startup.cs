@@ -25,6 +25,8 @@ using System.Security.Cryptography;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Event_Creator.Other.MiddleWare;
+using Event_Creator.Other.Filters;
+
 namespace Event_Creator
 {
     public class Startup
@@ -55,6 +57,7 @@ namespace Event_Creator
             services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                
             })
             .AddJwtBearer(jwt => {
                 jwt.RequireHttpsMetadata = false;
@@ -73,12 +76,30 @@ namespace Event_Creator
                     IssuerSigningKey = rsa,
                     //ClockSkew = TimeSpan.FromSeconds(30)
                 };
+                jwt.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies["access-token"];
+                        return Task.CompletedTask;
+                    },
+                };
+
             });
             services.AddHttpContextAccessor();
+            services.AddAntiforgery( options=>
+            {
+                options.HeaderName = "X-CSRF-Header";
+                options.Cookie.Name = "CSRF-TOKEN";
+                options.Cookie.HttpOnly = false;
+                options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+            }
+            );
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));
             services.AddControllers().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<CsrfActionFilter>();
         }
 
 
@@ -90,7 +111,6 @@ namespace Event_Creator
             }
 
             //app.UseHttpsRedirection();
-
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

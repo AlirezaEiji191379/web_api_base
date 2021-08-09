@@ -12,6 +12,9 @@ using MimeKit;
 using Microsoft.AspNetCore.Authorization;
 using Event_Creator.models.Security;
 using System.Security.Cryptography;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Antiforgery;
+using Event_Creator.Other.Filters;
 
 namespace Event_Creator.Controllers
 {
@@ -21,13 +24,15 @@ namespace Event_Creator.Controllers
     public class VerifyController : ControllerBase
     {
         private readonly ApplicationContext _appContext;
+        private IAntiforgery _antiForgery;
         private readonly IUserService _userService;
         private readonly IJwtService _jwtService;
-        public VerifyController(ApplicationContext applicationContext, IUserService userService , IJwtService jwtService)
+        public VerifyController(ApplicationContext applicationContext, IUserService userService , IJwtService jwtService, IAntiforgery antiForgery)
         {
             _appContext = applicationContext;
             _userService = userService;
             _jwtService = jwtService;
+            _antiForgery = antiForgery;
         }
 
 
@@ -52,7 +57,7 @@ namespace Event_Creator.Controllers
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.failedVerification);
+                return BadRequest("you must reSignUp");
             }
 
             User user = null;
@@ -63,7 +68,7 @@ namespace Event_Creator.Controllers
              _appContext.Users.Remove(user);
              _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
-             return BadRequest(Errors.exceedVerification);
+             return BadRequest("you must reSignUp");
             }
 
             if (verification.VerificationCode != code)
@@ -71,7 +76,7 @@ namespace Event_Creator.Controllers
               verification.Requested++;
               _appContext.verifications.Update(verification);
               await _appContext.SaveChangesAsync();
-              return BadRequest(Errors.failedVerification);
+              return BadRequest("wrong Code");
             }
 
               user =await _appContext.Users.SingleAsync(a => a.Username == username);
@@ -80,11 +85,12 @@ namespace Event_Creator.Controllers
              _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
 
-            return Ok(Information.okVerifySignUp);
+            return Ok("ok");
         }
 
 
-        [Route("[action]/{username}/{code}")]
+        [Route("[action]/Web/{username}/{code}")]
+        [Route("[action]/Mobile/{username}/{code}")]
         public async Task<IActionResult> VerifyLogin(string username, int code)
         {
             LockedAccount isLocked = await _appContext.lockedAccounts.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
@@ -153,23 +159,48 @@ namespace Event_Creator.Controllers
             RefreshToken refreshToken = await _jwtService.GenerateRefreshToken(jwtId, user.UserId, HttpContext,false,0);
             await _appContext.refreshTokens.AddAsync(refreshToken);
             await _appContext.SaveChangesAsync();
-            AuthResponse response = new AuthResponse()
+            String route = Request.Path.Value.ToString();
+            if (route.Contains("Web"))
             {
-                ErrorList = null,
-                success = true,
-                RefreshToken = refreshToken.Token,
-                JwtAccessToken = jwtAccessToken,
-                statusCode = 200,
-            };
-            return Ok(response);
+                Response.Cookies.Append("access-token", jwtAccessToken, new CookieOptions()
+                {
+                    /// securing cookies! with secure!
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.Lax,
+                    Expires=DateTime.Now.AddDays(7)
+                });
+
+                Response.Cookies.Append("refresh-token",refreshToken.Token,new CookieOptions()
+                {
+                    /// securing cookies! with secure!
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTime.Now.AddDays(7)
+                }
+                );
+                _antiForgery.GetAndStoreTokens(HttpContext);
+                return Ok("ok");
+            }
+            else
+            {
+                AuthResponseMobile response = new AuthResponseMobile()
+                {
+                    ErrorList = null,
+                    RefreshToken = refreshToken.Token,
+                    JwtAccessToken = jwtAccessToken,
+                    statusCode = 200,
+                };
+                return Ok(response);
+            }
         }
 
-
         [Authorize]
-        [Route("[action]/{username}/{code}")]
-        public async Task<IActionResult> VerifyChangePassword(string username, int code)
+        [ServiceFilter(typeof(CsrfActionFilter))]
+        [Route("[action]/{code}")]
+        public async Task<IActionResult> VerifyChangePassword(int code)
         {
-            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(username) && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId==userId && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
             if (verification == null)
             {
                 return BadRequest(Errors.NullVerification);
@@ -184,7 +215,7 @@ namespace Event_Creator.Controllers
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             if (unixTimeSeconds > verification.expirationTime)
             {
-                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId==userId);
                 _appContext.verifications.Remove(verification);
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
@@ -192,7 +223,7 @@ namespace Event_Creator.Controllers
             }
             if (verification.Requested == 2)
             {
-                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+                change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == userId);
                 _appContext.verifications.Remove(verification);
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
@@ -218,7 +249,7 @@ namespace Event_Creator.Controllers
                 //_appContext.refreshTokens.Update(allUserTokens[i]);
             }
             _appContext.refreshTokens.UpdateRange(allUserTokens);
-            change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.Username.Equals(username));
+            change = await _appContext.changePassword.Include(x => x.user).SingleOrDefaultAsync(x => x.user.UserId == userId);
             _appContext.changePassword.Remove(change);
             _appContext.verifications.Remove(verification);
             change.user.Password = _userService.Hash(change.NewPassword);

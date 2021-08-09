@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Event_Creator.models.Security;
+using Event_Creator.Other.Filters;
 
 namespace Event_Creator.Controllers
 {
@@ -22,6 +23,7 @@ namespace Event_Creator.Controllers
     {
         private readonly ApplicationContext _appContext;
         private readonly IUserService _userService;
+        private readonly IJwtService _jwtService;
         public UserController (ApplicationContext applicationContext,IUserService userService)
         {
             _appContext = applicationContext;
@@ -34,10 +36,14 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> SignUp([FromBody] User user)
         {
-            List<string> duplicationErrors = await _userService.checkUserDuplicate(user);
+            Dictionary<string, string> duplicationErrors = await _userService.checkUserDuplicate(user);
             if (duplicationErrors.Count != 0)
             {
-                return BadRequest(duplicationErrors);
+                return BadRequest(new SignUpDuplicationError()
+                {
+                    errors = duplicationErrors,
+                    statusCode = 400
+                });
             }
             user.Enable = false;
             user.role = Role.User;
@@ -61,22 +67,18 @@ namespace Event_Creator.Controllers
             };
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
-            return Ok(Information.okSignUp);
+            return Ok("ok");
         }
 
 
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         [HttpPost]
         public async Task<IActionResult> changePassword([FromBody] PasswodChangeRequest changeRequest)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == Convert.ToInt64(uid.ToString()));
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
             TextPart text = null;
             if (_userService.Check(user.Password , changeRequest.oldPassword) == false)
             {
@@ -152,16 +154,11 @@ namespace Event_Creator.Controllers
 
         [HttpPut]
         [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
         [Route("[action]")]
         public async Task<IActionResult> Update([FromBody] UserUpdateRequet requet)
         {
-            var authorizationHeader = Request.Headers.Single(x => x.Key == "Authorization");
-            var stream = authorizationHeader.Value.Single(x => x.Contains("Bearer")).Split(" ")[1];
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(stream);
-            var tokenS = jsonToken as JwtSecurityToken;
-            var uid = tokenS.Claims.First(claim => claim.Type == "uid").Value;
-            long userId = Convert.ToInt64(uid);
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
             User user = await _appContext.Users.Where(x => x.UserId ==userId).SingleOrDefaultAsync();
             if (user == null) return BadRequest("چنین کاربری موجود نیست");
             if (requet.updateField == UserUpdateField.firstname)
@@ -181,7 +178,16 @@ namespace Event_Creator.Controllers
             return Ok();
         }
 
-
+        [HttpGet]
+        [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
+        [Route("[action]")]
+        public async Task<IActionResult> GetProfile()
+        {
+            long userId = _jwtService.getUserIdFromJwt(HttpContext);
+            User user = await _appContext.Users.Where(x => x.UserId == userId).SingleOrDefaultAsync();
+            return Ok(user);
+        }
 
         [HttpPatch]
         [Route("[action]")]
