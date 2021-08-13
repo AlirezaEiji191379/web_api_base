@@ -37,8 +37,7 @@ namespace Event_Creator
         }
 
         public IConfiguration Configuration { get; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
+        public readonly string corsPolicyName = "cors";
         public void ConfigureServices(IServiceCollection services)
         {
             var jwtTokenConfig = Configuration.GetSection("JwtConfig").Get<JwtConfig>();
@@ -95,6 +94,14 @@ namespace Event_Creator
                 options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
             }
             );
+            services.AddCors(options => {
+                options.AddPolicy(
+                    name:corsPolicyName,builder => {
+                        builder.WithOrigins("http://localhost:3000");
+                    }
+                    );
+            
+            });
             services.AddDbContext<ApplicationContext>(opts => opts.UseSqlServer(Configuration["ConnectionString:EventDB"]));
             services.AddControllers().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddScoped<IUserService,UserService>();
@@ -112,6 +119,7 @@ namespace Event_Creator
 
             //app.UseHttpsRedirection();
             app.UseRouting();
+            app.UseCors(corsPolicyName);
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseMiddleware<SecurityMiddleWare>();
