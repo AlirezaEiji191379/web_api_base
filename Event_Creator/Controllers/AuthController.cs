@@ -212,17 +212,11 @@ namespace Event_Creator.Controllers
         //[ValidateAntiForgeryToken]
         public string test()
         {
-           // var authorization = Request.Cookies["jwtAccessToken"];
-            return "reza";
-        }
+            var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
 
-        [Route("[action]")]
-        //[Authorize]
-        //[ValidateAntiForgeryToken]
-        public string testing()
-        {
-            // var authorization = Request.Cookies["jwtAccessToken"];
-            return "reza";
+            return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
+           // var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
+            //return path.ToString();
         }
 
 
