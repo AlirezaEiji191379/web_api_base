@@ -43,6 +43,8 @@ namespace Event_Creator
             var jwtTokenConfig = Configuration.GetSection("JwtConfig").Get<JwtConfig>();
             services.AddSingleton(jwtTokenConfig);
 
+            var captchaConfig = Configuration.GetSection("CaptchaConfig").Get<CaptchaConfig>();
+            services.AddSingleton(captchaConfig);
             services.AddSingleton<RsaSecurityKey>(provider => {
                 RSA rsa = RSA.Create();
                 rsa.ImportRSAPublicKey(
@@ -98,6 +100,8 @@ namespace Event_Creator
                 options.AddPolicy(
                     name:corsPolicyName,builder => {
                         builder.WithOrigins("http://localhost:3000");
+                        builder.AllowAnyHeader();
+                        builder.AllowAnyMethod();
                     }
                     );
             
@@ -107,6 +111,7 @@ namespace Event_Creator
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<CsrfActionFilter>();
+            services.AddTransient<ICaptchaService,CaptchaService>();
         }
 
 

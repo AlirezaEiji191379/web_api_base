@@ -24,19 +24,23 @@ namespace Event_Creator.Controllers
         private readonly ApplicationContext _appContext;
         private readonly IUserService _userService;
         private readonly IJwtService _jwtService;
-        public UserController (ApplicationContext applicationContext,IUserService userService)
+        private readonly ICaptchaService _captchaService;
+        public UserController (ApplicationContext applicationContext,IUserService userService,ICaptchaService captchaService)
         {
             _appContext = applicationContext;
             _userService = userService;
+            _captchaService = captchaService;
         }
         
 
 
         [Route("[action]")]
         [HttpPost]
-        public async Task<IActionResult> SignUp([FromBody] User user)
+        public async Task<IActionResult> SignUp([FromBody] UserSignUpRequest request)
         {
-            Dictionary<string, string> duplicationErrors = await _userService.checkUserDuplicate(user);
+            bool isValid =await _captchaService.IsCaptchaValid(request.captchaToken);
+            if (isValid == false) return BadRequest(new {message="invalid captcha!"});
+            Dictionary<string, string> duplicationErrors = await _userService.checkUserDuplicate(request.user);
             if (duplicationErrors.Count != 0)
             {
                 return BadRequest(new SignUpDuplicationError()
@@ -45,29 +49,29 @@ namespace Event_Creator.Controllers
                     statusCode = 400
                 });
             }
-            user.Enable = false;
-            user.role = Role.User;
-            user.Password = _userService.Hash(user.Password);
-            await _appContext.Users.AddAsync(user);
+            request.user.Enable = false;
+            request.user.role = Role.User;
+            request.user.Password = _userService.Hash(request.user.Password);
+            await _appContext.Users.AddAsync(request.user);
             Random random = new Random();
             int code = random.Next(100000, 999999);
             TextPart text = new TextPart("plain")
             {
                 Text = $"verification Code is {code} and it is valid for 15 mins!"
             };
-            await _userService.sendEmailToUser(user.Email,text,"کد تایید ثبت نام");
+            await _userService.sendEmailToUser(request.user.Email,text,"کد تایید ثبت نام");
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             Verification verification = new Verification()
             {
-                User = user,
+                User = request.user,
                 VerificationCode = code,
                 usage = Usage.SignUp,
                 expirationTime=unixTimeSeconds+900
             };
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
-            return Ok("ok");
+            return Ok(new {message="the confirmation email was sent to your email"});
         }
 
 
