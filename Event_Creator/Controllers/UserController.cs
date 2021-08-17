@@ -193,15 +193,43 @@ namespace Event_Creator.Controllers
             return Ok(user);
         }
 
-        [HttpPatch]
-        [Route("[action]")]
-        public async Task<IActionResult> updateUser(User user)
+        //[HttpPatch]
+        //[Route("[action]")]
+        //public async Task<IActionResult> updateUser(User user)
+        //{
+        //    return Ok(user);
+        //}
+
+        [HttpGet]
+        [Route("check/{kind}/{value}")]
+        public async Task<IActionResult> checkErrorInDuplication(Kind kind,string value)
         {
-            return Ok(user);
+            User user = null;
+            if (kind == Kind.Username) user = await _appContext.Users.Where(x => x.Username.Equals(value)).SingleOrDefaultAsync();
+            else if (kind == Kind.PhoneNumber) user = await _appContext.Users.Where(x => x.PhoneNumber.Equals(value)).SingleOrDefaultAsync();
+            else if (kind == Kind.Email) user = await _appContext.Users.Where(x => x.Email.Equals(value)).SingleOrDefaultAsync();
+            else
+            {
+                return NotFound();
+            }
+            if (user == null)
+            {
+                return Ok();
+            }
+            else
+            {
+                return StatusCode(403);
+            }
         }
 
 
+        public enum Kind
+        {
+            Username,
+            PhoneNumber,
+            Email
 
+        }
 
 
     }
