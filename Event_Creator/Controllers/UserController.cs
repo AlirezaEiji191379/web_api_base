@@ -34,7 +34,7 @@ namespace Event_Creator.Controllers
         
 
 
-        [Route("")]
+        [Route("[action]")]
         [HttpPost]
         public async Task<IActionResult> SignUp([FromBody] UserSignUpRequest request)
         {

@@ -212,7 +212,7 @@ namespace Event_Creator.Controllers
         }
 
         [Route("[action]")]
-        [Authorize]
+       // [Authorize]
         //[ValidateAntiForgeryToken]
         public string test()
         {

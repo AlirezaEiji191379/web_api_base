@@ -34,8 +34,8 @@ namespace Event_Creator.Controllers
         public IActionResult DownloadImage(string imageId, Image kind)
         {
             string path = null;
-            if (kind == Image.book) path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books"));
-            else path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users"));
+            if (kind == Image.book) path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\books"));
+            else path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\users"));
             string[] files = Directory.GetFiles(path);
             foreach (var file in files)
             {
@@ -70,7 +70,8 @@ namespace Event_Creator.Controllers
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             string name = userId.ToString() + Path.GetExtension(profile.FileName).ToLower();
-            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users", name));
+            //var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users", name));
+            var path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\users",name));
             if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
             var fileStream = new FileStream(path, FileMode.Create);
             await profile.CopyToAsync(fileStream);
@@ -90,7 +91,7 @@ namespace Event_Creator.Controllers
             if (book.imageCount == 4) return StatusCode(403,"تعداد تصاویر حداکثر 4 تا میباشد");
             int index = book.imageCount + 1;
             string name = book.BookId.ToString() + "_" + index.ToString() + Path.GetExtension(image.FileName).ToLower();
-            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books", name));
+            var path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\books", name));
             var fileStream = new FileStream(path, FileMode.Create);
             await image.CopyToAsync(fileStream);
             fileStream.Close();
@@ -110,7 +111,7 @@ namespace Event_Creator.Controllers
             Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == userId).SingleOrDefaultAsync();
             if (book == null) return StatusCode(404, "چنین کتابی موجود نیست");
             string name = book.BookId.ToString() + "_" + imageId.ToString();
-            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\books"));
+            var path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\books"));
             List<string> files = Directory.GetFiles(path).Where(x => x.Contains(bookId.ToString())).ToList();
             string deletePath = files.Where(x => x.Contains(name)).SingleOrDefault();
             if(deletePath ==null) return StatusCode(404, "چنین فایلی وجود ندارد");
@@ -134,7 +135,7 @@ namespace Event_Creator.Controllers
         public IActionResult DeleteProfileImage()
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
-            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images\users"));
+            var path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\users"));
             string deletePath = Directory.GetFiles(path).Where(x => x.Contains(userId.ToString())).SingleOrDefault();
             if(deletePath == null) return StatusCode(404, "چنین عکسی وجود ندارد");
             System.IO.File.Delete(deletePath);
