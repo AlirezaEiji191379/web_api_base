@@ -20,10 +20,10 @@ namespace Event_Creator
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseKestrel();
+                    //webBuilder.UseKestrel();
                     webBuilder.UseContentRoot(Directory.GetCurrentDirectory());
                     webBuilder.UseIISIntegration();
-                    webBuilder.UseUrls("http://*:80;http://localhost:80");
+                    webBuilder.UseUrls("http://*:5000;http://localhost:5000");
                     webBuilder.UseStartup<Startup>();
                 });
     }
