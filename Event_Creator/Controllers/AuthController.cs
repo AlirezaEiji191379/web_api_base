@@ -217,11 +217,26 @@ namespace Event_Creator.Controllers
         public string test()
         {
             var userAgent = Request.Headers.FirstOrDefault(x => x.Key.Contains("User-Agent"));
-
             return Request.HttpContext.Connection.RemoteIpAddress.ToString() + "       " + userAgent.ToString();
            // var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\Resources\webApi\images"));
             //return path.ToString();
         }
+
+        [Route("splash/web")]
+        [Authorize]
+        [ServiceFilter(typeof(CsrfActionFilter))]
+        public IActionResult WebSplash()
+        {
+            return Ok();
+        }
+
+        [Route("splash/mobile")]
+        [Authorize]
+        public IActionResult MobSplash()
+        {
+            return Ok();
+        }
+
 
 
 

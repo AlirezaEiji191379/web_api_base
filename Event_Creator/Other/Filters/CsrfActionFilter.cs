@@ -18,12 +18,12 @@ namespace Event_Creator.Other.Filters
                     String csrf_header = context.HttpContext.Request.Headers["X-CSRF-Header"];
                     if (csrf_cookie == null || csrf_header == null)
                     {
-                        context.Result = new BadRequestObjectResult("bad request");
+                        context.Result = new BadRequestObjectResult("CSRF token not detected");
                         return;
                     }
                     if (csrf_header.Equals(csrf_cookie) == false)
                     {
-                        context.Result = new BadRequestObjectResult("bad request");
+                        context.Result = new BadRequestObjectResult("CSRF token not detected");
                         return;
                     }
                 }
