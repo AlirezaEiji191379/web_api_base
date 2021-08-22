@@ -117,10 +117,10 @@ namespace Event_Creator
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
+            //if (env.IsDevelopment())
+            //{
                 app.UseDeveloperExceptionPage();
-            }
+            //}
 
             //app.UseHttpsRedirection();
             app.UseRouting();

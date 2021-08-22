@@ -53,7 +53,7 @@ namespace Event_Creator.Other.Services
 
 
 
-        public async Task sendEmailToUser(string email ,TextPart text , string subject)
+        public async Task sendEmailToUser(string email, TextPart text, string subject)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Event_Creator Team Support", "alirezaeiji191379@gmail.com"));

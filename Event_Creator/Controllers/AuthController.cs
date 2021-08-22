@@ -45,8 +45,8 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
-            bool isValid = await _captchaService.IsCaptchaValid(loginRequest.captchaToken);
-            if (isValid == false) return BadRequest(new { message = "invalid captcha!" });
+            //bool isValid = await _captchaService.IsCaptchaValid(loginRequest.captchaToken);
+            //if (isValid == false) return BadRequest(new { message = "invalid captcha!" });
             User user = await _appContext.Users.Where(x => x.Username.Equals(loginRequest.Username)).SingleOrDefaultAsync();
             if (user == null) return NotFound(Errors.wrongAuth);
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(loginRequest.Username) && x.usage==Usage.Login).FirstOrDefaultAsync();

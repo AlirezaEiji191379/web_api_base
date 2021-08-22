@@ -38,8 +38,8 @@ namespace Event_Creator.Controllers
         [HttpPost]
         public async Task<IActionResult> SignUp([FromBody] UserSignUpRequest request)
         {
-            bool isValid =await _captchaService.IsCaptchaValid(request.captchaToken);
-            if (isValid == false) return BadRequest(new {message="invalid captcha!"});
+            //bool isValid =await _captchaService.IsCaptchaValid(request.captchaToken);
+            //if (isValid == false) return BadRequest(new {message="invalid captcha!"});
             Dictionary<string, string> duplicationErrors = await _userService.checkUserDuplicate(request.user);
             if (duplicationErrors.Count != 0)
             {
