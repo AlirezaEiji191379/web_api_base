@@ -53,7 +53,7 @@ namespace Event_Creator.Controllers
             if(verification!=null) return BadRequest("ok");
             if (user.Enable == false)
             {
-                return BadRequest(Errors.notEnabledLogin);
+                return BadRequest(new { message = Errors.notEnabledLogin });
             }
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -63,7 +63,7 @@ namespace Event_Creator.Controllers
             failedLogin = await _appContext.failedLogins.Include(x => x.user).FirstOrDefaultAsync(x => x.user.Username.Equals(loginRequest.Username));
             if (isLocked != null)
             {
-                if (isLocked.unlockedTime > unixTimeSeconds) return StatusCode(429, Errors.failedLoginLock);
+                if (isLocked.unlockedTime > unixTimeSeconds) return StatusCode(429, new { message = Errors.failedLoginLock });
                 else { 
                   _appContext.lockedAccounts.Remove(isLocked);
                     if (failedLogin != null) _appContext.failedLogins.Remove(failedLogin);
@@ -79,7 +79,7 @@ namespace Event_Creator.Controllers
                     unlockedTime = unixTimeSeconds + 300/////////////////////////////////////////
                 });
                  await _appContext.SaveChangesAsync();
-                return StatusCode(429, Errors.failedLoginLock);
+                return StatusCode(429, new { message = Errors.failedLoginLock });
             }
 
             if (_userService.Check(user.Password, loginRequest.Password) == false)
@@ -95,7 +95,7 @@ namespace Event_Creator.Controllers
                         _appContext.failedLogins.Update(failedLogin);
                     }
                     await _appContext.SaveChangesAsync();
-                return NotFound(Errors.wrongAuth);
+                return NotFound(new { message = Errors.wrongAuth });
             }
 
             Random random = new Random();
@@ -116,7 +116,7 @@ namespace Event_Creator.Controllers
             if (failedLogin != null) _appContext.failedLogins.Remove(failedLogin);
             await _appContext.verifications.AddAsync(newVerification);
             await _appContext.SaveChangesAsync();
-            return Ok("ok");
+            return Ok();
         }
 
 
@@ -128,7 +128,7 @@ namespace Event_Creator.Controllers
         {
             string jti = _jwtService.getJwtIdFromJwt(HttpContext);
             RefreshToken refreshToken = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
-            if (refreshToken == null) return BadRequest(Errors.NotFoundRefreshToken);
+            if (refreshToken == null) return BadRequest(new { message = Errors.NotFoundRefreshToken });
             refreshToken.Revoked = true;
             _appContext.refreshTokens.Update(refreshToken);
             JwtBlackList blackList = new JwtBlackList()
@@ -176,7 +176,7 @@ namespace Event_Creator.Controllers
             RefreshToken requester = await _appContext.refreshTokens.SingleOrDefaultAsync(x => x.JwtTokenId.Equals(jti));
             if(requester.Priority >= priority)
             {
-                return StatusCode(403,"شما به دلایل امنیتی اجازه ندارید مابقی نشست هایی که قبل از شما ورود نموده اند را حذف کنید");
+                return StatusCode(403, new { message = "شما به دلایل امنیتی اجازه ندارید مابقی نشست هایی که قبل از شما ورود نموده اند را حذف کنید" });
             }
             await _appContext.Entry(requester).Reference(x => x.user).LoadAsync();
             RefreshToken finished = await _appContext.refreshTokens.Where(x => x.user.UserId==requester.user.UserId && x.Priority==priority).SingleOrDefaultAsync();
@@ -194,7 +194,7 @@ namespace Event_Creator.Controllers
         [Route("[action]")]
         [Authorize]
         [ServiceFilter(typeof(CsrfActionFilter))]
-        public async Task<List<DeviceResponse>> getAllDevices()
+        public async Task<IActionResult> getAllDevices()
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.UserId == userId);
@@ -208,7 +208,7 @@ namespace Event_Creator.Controllers
                     UserAgent = refresh.UserAgent
                 });
             }
-            return allDevices;
+            return Ok(new { devices = allDevices });
         }
 
         [Route("[action]")]

@@ -37,33 +37,33 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> AddBook([FromForm]string bookJson,List<IFormFile> bookImages)
         {
             long volSum = 0;
-            if(bookImages ==null || bookImages.Count==0) return BadRequest("حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود");
-            if (bookImages.Count > 4) return BadRequest("حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود");
+            if(bookImages ==null || bookImages.Count==0) return BadRequest(new { message = "حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود" });
+            if (bookImages.Count > 4) return BadRequest(new { message = "حداکثر 4 تصویر و حداقل یک تصویر باید آپلود شود" });
             foreach(var file in bookImages)
             {
                 if(Path.GetExtension(file.FileName)!=".jpg" && Path.GetExtension(file.FileName) != ".png" && Path.GetExtension(file.FileName) != ".jpeg")
                 {
-                    return BadRequest(Errors.InvalidFileFormat);
+                    return BadRequest(new { message = Errors.InvalidFileFormat });
                 }
                 volSum = volSum + file.Length;
             }
-            if (volSum > 10485760) return BadRequest("حجم فایل های ارسالی بیش از 10 مگابایت مجاز نیست");
+            if (volSum > 10485760) return BadRequest(new { message = "حجم فایل های ارسالی بیش از 10 مگابایت مجاز نیست" });
 
             try
             {
                 Book book = JsonConvert.DeserializeObject<Book>(bookJson);
                 //Console.WriteLine(book.BookName);
-                if (book.BookName == null || book.BookName=="") return BadRequest("نام کتاب را وارد کنید");
-                if (book.PublisherName == null || book.PublisherName == "") return BadRequest("نام ناشر کتاب را وارد کنید");
-                if (book.Publication == 0) { return BadRequest("لظفا سال کتاب را وارد کنید"); }
-                if (book.Writer == "" || book.Writer == null) return BadRequest("لطفا نام نویسنده را وارد کنید");
+                if (book.BookName == null || book.BookName=="") return BadRequest(new { message = "نام کتاب را وارد کنید" });
+                if (book.PublisherName == null || book.PublisherName == "") return BadRequest(new { message = "نام ناشر کتاب را وارد کنید" });
+                if (book.Publication == 0) return BadRequest(new { message = "لظفا سال کتاب را وارد کنید" }); 
+                if (book.Writer == "" || book.Writer == null) return BadRequest(new { message = "لطفا نام نویسنده را وارد کنید" });
                 if (await _appContext.categories.Where(x => x.CategoryId == book.CategoryId).SingleOrDefaultAsync() == null)
                 {
-                    return BadRequest("این دسته بندی موجود نمیباشد");
+                    return BadRequest(new { message = "این دسته بندی موجود نمیباشد" });
                 }
                 if(await _appContext.categories.Where(x => x.ParentId == book.CategoryId).FirstOrDefaultAsync() != null)
                 {
-                    return BadRequest("لطفا دسته بندی درست را انتخاب کنید");
+                    return BadRequest(new { message = "لطفا دسته بندی درست را انتخاب کنید" });
                 }
                 var now = DateTime.Now;
                 var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -77,7 +77,7 @@ namespace Event_Creator.Controllers
                 {
                     foreach (var b in book.exchanges)
                     {
-                        if (b.BookName == null || b.BookName == "") return BadRequest("نام کتاب تبادلی را وارد کنید");
+                        if (b.BookName == null || b.BookName == "") return BadRequest(new { message = "نام کتاب تبادلی را وارد کنید" });
                         b.bookToExchange = book;
                     }
                     book.Exchangable = true;
@@ -96,11 +96,11 @@ namespace Event_Creator.Controllers
                     i++;
                 }
              
-                return Ok("ok");
+                return Ok();
             }
-            catch(Exception e)
+            catch
             {
-               return BadRequest("bad Request!");
+               return BadRequest(new { message = "bad Request!" });
             }
         }
        
@@ -116,12 +116,12 @@ namespace Event_Creator.Controllers
 
             if(book == null)
             {
-                return NotFound("چنین کتابی موجود نیست");
+                return NotFound(new { message = "چنین کتابی موجود نیست" });
             }
             book.BookName = update.BookName;
             _appContext.books.Update(book);
             await _appContext.SaveChangesAsync();
-            return Ok("نام کتاب تغییر کرد!");
+            return Ok(new { message = "نام کتاب تغییر کرد!" });
         }
 
         [Authorize(Roles = "User")]
@@ -136,12 +136,12 @@ namespace Event_Creator.Controllers
 
             if (book == null)
             {
-                return NotFound("چنین کتابی موجود نیست");
+                return NotFound(new { message = "چنین کتابی موجود نیست" });
             }
             book.Price = update.Price;
             _appContext.books.Update(book);
             await _appContext.SaveChangesAsync();
-            return Ok("قیمت کتاب تغییر کرد");
+            return Ok(new { message = "قیمت کتاب تغییر کرد" });
         }
         
 
@@ -157,22 +157,22 @@ namespace Event_Creator.Controllers
 
             if (book == null)
             {
-                return NotFound("چنین کتابی موجود نیست");
+                return NotFound(new { message = "چنین کتابی موجود نیست" });
             }
 
             if (await _appContext.categories.Where(x => x.CategoryId == update.CategoryId).SingleOrDefaultAsync() == null)
             {
-                return BadRequest("این دسته بندی موجود نمیباشد");
+                return BadRequest(new { message = "این دسته بندی موجود نمیباشد" });
             }
             if (await _appContext.categories.Where(x => x.ParentId == update.CategoryId).FirstOrDefaultAsync() != null)
             {
-                return BadRequest("لطفا دسته بندی درست را انتخاب کنید");
+                return BadRequest(new { message = "لطفا دسته بندی درست را انتخاب کنید" });
             }
 
             book.CategoryId = update.CategoryId;
             _appContext.books.Update(book);
             await _appContext.SaveChangesAsync();
-            return Ok("دسته بندی کتاب عوض شد");
+            return Ok(new { message = "دسته بندی کتاب عوض شد" });
         }
 
         [Authorize(Roles = "User")]
@@ -187,7 +187,7 @@ namespace Event_Creator.Controllers
 
             if (book == null)
             {
-                return NotFound("چنین کتابی موجود نیست");
+                return NotFound(new { message = "چنین کتابی موجود نیست" });
             }
 
             Exchange exchangeBook = await _appContext.exchanges.Where(x => x.ExchangeId==update.ExchangeId &&
@@ -195,12 +195,12 @@ namespace Event_Creator.Controllers
 
             if(exchangeBook == null)
             {
-                return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
+                return BadRequest(new { message = "چنین کتاب تبادلی ای وجود ندارد" });
             }
             exchangeBook.BookName = update.BookName;
             _appContext.exchanges.Update(exchangeBook);
             await _appContext.SaveChangesAsync();
-            return Ok("کتاب تبادلی به روز رسانی شد");
+            return Ok(new { message = "کتاب تبادلی به روز رسانی شد" });
         }
 
         [Authorize(Roles = "User")]
@@ -215,13 +215,13 @@ namespace Event_Creator.Controllers
 
             if (book == null)
             {
-                return NotFound("چنین کتابی موجود نیست");
+                return NotFound(new { message = "چنین کتابی موجود نیست" });
             }
 
             update.exchange.bookToExchangeId = update.BookId;
             await _appContext.exchanges.AddAsync(update.exchange);
             await _appContext.SaveChangesAsync();
-            return Ok("افزوده شد");
+            return Ok(new { message = "افزوده شد" });
         }
         
         
@@ -236,17 +236,17 @@ namespace Event_Creator.Controllers
             Exchange exchange = await _appContext.exchanges.Where(x => x.ExchangeId == exchangeId).SingleOrDefaultAsync();
             if (exchange == null)
             {
-                return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
+                return BadRequest(new { message = "چنین کتاب تبادلی ای وجود ندارد" });
             }
             long bookId = exchange.bookToExchangeId;
             Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == userId).SingleOrDefaultAsync();
             if(book == null)
             {
-                return BadRequest("چنین کتاب تبادلی ای وجود ندارد");
+                return BadRequest(new { message = "چنین کتاب تبادلی ای وجود ندارد" });
             }
             _appContext.exchanges.Remove(exchange);
             await _appContext.SaveChangesAsync();
-            return Ok("کتاب تبادلی مورد نظر حذف شد");
+            return Ok(new { message = "کتاب تبادلی مورد نظر حذف شد" });
         }
 
         [Authorize]
@@ -259,7 +259,7 @@ namespace Event_Creator.Controllers
             Book book = await _appContext.books.Where(x => x.BookId == bookId).SingleOrDefaultAsync();
             if (book == null)
             {
-                return BadRequest("چنین کتابی وجود ندارد");
+                return BadRequest(new { message = "چنین کتابی وجود ندارد" });
             }
 
             if(book.UserId != userId)
@@ -267,7 +267,7 @@ namespace Event_Creator.Controllers
                 User user=await _appContext.Users.Where(x => x.UserId == userId).SingleAsync();
                 if (user.role == Role.User)
                 {
-                    return StatusCode(403, "شما قفط می توانید کتاب های خود را حذف کنید");
+                    return StatusCode(403, new { message = "شما قفط می توانید کتاب های خود را حذف کنید" });
                 }
             }
             await _appContext.Entry(book).Collection(x => x.exchanges).LoadAsync();
@@ -282,7 +282,7 @@ namespace Event_Creator.Controllers
             {
                 System.IO.File.Delete(file);
             }
-            return Ok("کتاب مورد نظر حذف شد");
+            return Ok(new { message = "کتاب مورد نظر حذف شد" });
         }
 
 
@@ -295,7 +295,7 @@ namespace Event_Creator.Controllers
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book.jsonStatus = JsonStatus.DisableUserAndCategory;
             var allBooks = _appContext.books.Include(x => x.Category).Include(x => x.user).Where(x => x.UserId == userId).ToList();
-            return Ok(allBooks);
+            return Ok(new { books = allBooks });
         }
 
         [HttpGet]
@@ -306,7 +306,7 @@ namespace Event_Creator.Controllers
             Book book = await _appContext.books.Where(x => x.BookId==bookId).SingleOrDefaultAsync();
             if (book == null)
             {
-                return BadRequest("چنین کتابی وجود ندارد");
+                return BadRequest(new { message = "چنین کتابی وجود ندارد" });
             }
            // Book.jsonStatus = JsonStatus.EnableUserAndCategory;
             book.views = book.views + 1;
@@ -315,7 +315,7 @@ namespace Event_Creator.Controllers
             await _appContext.Entry(book).Reference(x => x.Category).LoadAsync();
             _appContext.books.Update(book);
             await _appContext.SaveChangesAsync();
-            return Ok(book);
+            return Ok(new { book = book });
         }
 
         [HttpGet]
@@ -409,7 +409,7 @@ namespace Event_Creator.Controllers
                     }
                 }
             }
-            return Ok(books);
+            return Ok(new { books = books });
         }
 
         [HttpPut]
@@ -422,10 +422,10 @@ namespace Event_Creator.Controllers
             Book book = await _appContext.books.Where(x => x.BookId==bookId).SingleOrDefaultAsync();
             if(book == null)
             {
-                return BadRequest("چنین کتابی موجود نیست");
+                return BadRequest(new { message = "چنین کتابی موجود نیست" });
             }
             Bookmark mark = await _appContext.bookmarks.Include(x => x.book).Where(x => x.userId == userId && x.book.BookId == bookId).SingleOrDefaultAsync();
-            if (mark != null) return BadRequest("این کتاب قبلا ذخیره شده است");
+            if (mark != null) return BadRequest(new { message = "این کتاب قبلا ذخیره شده است" });
             Bookmark bookmark = new Bookmark()
             {
                 book=book,
@@ -435,7 +435,7 @@ namespace Event_Creator.Controllers
             _appContext.books.Update(book);
             await _appContext.bookmarks.AddAsync(bookmark);
             await _appContext.SaveChangesAsync();
-            return Ok("کتاب به لیست افزوده شد");
+            return Ok(new { message = "کتاب به لیست افزوده شد" });
         }  
 
         [HttpGet]
@@ -453,7 +453,7 @@ namespace Event_Creator.Controllers
                 await _appContext.Entry(mark.book).Reference(x => x.Category).LoadAsync();
                 await _appContext.Entry(mark.book).Reference(x => x.user).LoadAsync();
             }
-            return Ok(user.bookmarks);
+            return Ok(new { bookmarks = user.bookmarks });
         }
 
         [HttpDelete]
@@ -464,10 +464,10 @@ namespace Event_Creator.Controllers
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Bookmark bookmark = await _appContext.bookmarks.Include(x => x.book).Where(x => x.userId == userId && x.book.BookId == bookId).SingleOrDefaultAsync();
-            if (bookmark == null) return BadRequest("چنین کتابی ذخیره نشده است");
+            if (bookmark == null) return BadRequest(new { message = "چنین کتابی ذخیره نشده است" });
             _appContext.bookmarks.Remove(bookmark);
             await _appContext.SaveChangesAsync();
-            return Ok("کتاب مورد نظر حذف شد");
+            return Ok(new { message = "کتاب مورد نظر حذف شد" });
         }
 
         [HttpPost]
@@ -480,22 +480,22 @@ namespace Event_Creator.Controllers
             Book book = await _appContext.books.Where(x => x.UserId == userId && x.BookId == request.BookId).SingleOrDefaultAsync();
             if(book == null)
             {
-                return StatusCode(404,"چنین کتابی وجود ندارد");
+                return StatusCode(404, new { message = "چنین کتابی وجود ندارد" });
             }
             if (book.sellStatus !=SellStatus.none)
             {
-                return StatusCode(403,"این کتاب قبلا فروخته شده است");
+                return StatusCode(403, new { message = "این کتاب قبلا فروخته شده است" });
             }
             if(request.username !="" && request.username != null)
             {
                 User user = await _appContext.Users.Where(x => x.Username == request.username).SingleOrDefaultAsync();
                 if (user == null)
                 {
-                    return StatusCode(404, "چنین کاربری وجود ندارد");
+                    return StatusCode(404, new { message = "چنین کاربری وجود ندارد" });
                 }
                 if(user.UserId == userId)
                 {
-                    return StatusCode(403,"شما نمیتوانید کتاب را به خودتان بفروشید");
+                    return StatusCode(403, new { message = "شما نمیتوانید کتاب را به خودتان بفروشید" });
                 }
                 book.buyerId = user.UserId;
                 book.sellStatus = SellStatus.AuthenticatedBuyer;
@@ -506,7 +506,7 @@ namespace Event_Creator.Controllers
             }
             _appContext.books.Update(book);
             await _appContext.SaveChangesAsync();
-            return Ok("کتاب به لیست فروخته شده ها افزوده شد");
+            return Ok(new { message = "کتاب به لیست فروخته شده ها افزوده شد" });
         }
 
         [HttpGet]
@@ -516,7 +516,7 @@ namespace Event_Creator.Controllers
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             List<Book> bought = await _appContext.books.Where(x => x.buyerId == userId).ToListAsync();
-            return Ok(bought);
+            return Ok(new { bought = bought });
         }
 
         [HttpGet]
@@ -527,7 +527,7 @@ namespace Event_Creator.Controllers
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book.jsonStatus = JsonStatus.DisableUserAndCategory;
             List<Book> sold = await _appContext.books.Where(x => x.UserId == userId && x.sellStatus != SellStatus.none).ToListAsync();
-            return Ok(sold);
+            return Ok(new { sold = sold });
         }
         
 

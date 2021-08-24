@@ -76,7 +76,7 @@ namespace Event_Creator.Controllers
             var fileStream = new FileStream(path, FileMode.Create);
             await profile.CopyToAsync(fileStream);
             fileStream.Close();
-            return Ok("عکس پروفایل اضافه شد");
+            return Ok(new { message = "عکس پروفایل اضافه شد" });
         }
 
         [Authorize]
@@ -87,8 +87,8 @@ namespace Event_Creator.Controllers
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == userId).SingleOrDefaultAsync();
-            if (book == null) return StatusCode(404,"چنین کتابی موجود نیست");
-            if (book.imageCount == 4) return StatusCode(403,"تعداد تصاویر حداکثر 4 تا میباشد");
+            if (book == null) return StatusCode(404, new { message = "چنین کتابی موجود نیست" });
+            if (book.imageCount == 4) return StatusCode(403, new { message = "تعداد تصاویر حداکثر 4 تا میباشد" });
             int index = book.imageCount + 1;
             string name = book.BookId.ToString() + "_" + index.ToString() + Path.GetExtension(image.FileName).ToLower();
             var path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\books", name));
@@ -98,7 +98,7 @@ namespace Event_Creator.Controllers
             book.imageCount = book.imageCount + 1;
             _appContext.books.Update(book);
             await _appContext.SaveChangesAsync();
-            return Ok("تصویر جدید اضافه شد");
+            return Ok(new { message = "تصویر جدید اضافه شد" });
         }
         
         [Authorize]
@@ -109,12 +109,12 @@ namespace Event_Creator.Controllers
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             Book book = await _appContext.books.Where(x => x.BookId == bookId && x.UserId == userId).SingleOrDefaultAsync();
-            if (book == null) return StatusCode(404, "چنین کتابی موجود نیست");
+            if (book == null) return StatusCode(404, new { message = "چنین کتابی موجود نیست" });
             string name = book.BookId.ToString() + "_" + imageId.ToString();
             var path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\books"));
             List<string> files = Directory.GetFiles(path).Where(x => x.Contains(bookId.ToString())).ToList();
             string deletePath = files.Where(x => x.Contains(name)).SingleOrDefault();
-            if(deletePath ==null) return StatusCode(404, "چنین فایلی وجود ندارد");
+            if(deletePath ==null) return StatusCode(404, new { message = "چنین فایلی وجود ندارد" });
             files.Remove(deletePath);
             System.IO.File.Delete(deletePath);
             for (int i = 0; i < files.Count; i++)
@@ -124,7 +124,7 @@ namespace Event_Creator.Controllers
              book.imageCount--;
              _appContext.books.Update(book);
              await _appContext.SaveChangesAsync();
-            return Ok("تصویر مورد نظر پاک شد");
+            return Ok(new { message = "تصویر مورد نظر پاک شد" });
         }
 
 
@@ -137,9 +137,9 @@ namespace Event_Creator.Controllers
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             var path = Path.GetFullPath(Path.Combine(@"M:\WebProject\Resources\webApi\images\users"));
             string deletePath = Directory.GetFiles(path).Where(x => x.Contains(userId.ToString())).SingleOrDefault();
-            if(deletePath == null) return StatusCode(404, "چنین عکسی وجود ندارد");
+            if(deletePath == null) return StatusCode(404, new { message = "چنین عکسی وجود ندارد" });
             System.IO.File.Delete(deletePath);
-            return Ok("تصویر مورد نظر پاک شد");
+            return Ok(new { message = "تصویر مورد نظر پاک شد" });
         }
         
 

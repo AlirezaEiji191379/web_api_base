@@ -91,7 +91,7 @@ namespace Event_Creator.Controllers
                     Text = "کاربر گرامی شخصی قصد تغییر رمز عبور حساب کاربری شما را دارد درصورتی که آن شخص شما نیستید رمز عبور خود را تغییر دهید ."
                 };
                 await _userService.sendEmailToUser(user.Email,text,"هشدار امنیتی");
-                return StatusCode(403,Errors.PasswordChangeFailed);
+                return StatusCode(403, new { message = Errors.PasswordChangeFailed });
             }
             if (changeRequest.newPassword.Length < 6 || changeRequest.newPassword.Length > 20) return BadRequest("رمز عبور باید از 6 حرف بیشتر و از 20 حرف کمتر باشدs");
             Verification verification1 = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId == user.UserId && x.usage==Usage.ChangePassword).SingleOrDefaultAsync();
@@ -121,7 +121,7 @@ namespace Event_Creator.Controllers
             await _appContext.verifications.AddAsync(verification);
             await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(user.Email, text, "هشدار امنیتی");
-            return Ok("پست الکترونیکی برای شما ارسال شده است");
+            return Ok(new { message = "پست الکترونیکی برای شما ارسال شده است" });
         }
 
 
@@ -129,9 +129,9 @@ namespace Event_Creator.Controllers
         public async Task<IActionResult> ForgetPassword(string email)
         {
             User user = await _appContext.Users.SingleOrDefaultAsync(x => x.Email.Equals(email));
-            if (user == null) return BadRequest(Errors.NullEmailResetPassword);
+            if (user == null) return BadRequest(new { message = Errors.NullEmailResetPassword });
             Verification verification1 = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId == user.UserId && x.usage == Usage.ResetPassword).SingleOrDefaultAsync();
-            if (verification1 != null) return BadRequest("ایمیل قبلا برای شما ارسال شده است");
+            if (verification1 != null) return BadRequest(new { message = "ایمیل قبلا برای شما ارسال شده است" });
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
             Random random = new Random();
@@ -152,7 +152,7 @@ namespace Event_Creator.Controllers
             await _appContext.verifications.AddAsync(verification);
             await _userService.sendEmailToUser(user.Email,text, "هشدار امنیتی");
             await _appContext.SaveChangesAsync();
-            return Ok(Information.ResetPassword);
+            return Ok(new { message = Information.ResetPassword });
         }
 
 
@@ -164,7 +164,7 @@ namespace Event_Creator.Controllers
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             User user = await _appContext.Users.Where(x => x.UserId ==userId).SingleOrDefaultAsync();
-            if (user == null) return BadRequest("چنین کاربری موجود نیست");
+            if (user == null) return BadRequest(new { message = "چنین کاربری موجود نیست" });
             if (requet.updateField == UserUpdateField.firstname)
             {
                 user.FirstName = requet.value;
@@ -190,7 +190,7 @@ namespace Event_Creator.Controllers
         {
             long userId = _jwtService.getUserIdFromJwt(HttpContext);
             User user = await _appContext.Users.Where(x => x.UserId == userId).SingleOrDefaultAsync();
-            return Ok(user);
+            return Ok(new { User = user });
         }
 
         //[HttpPatch]

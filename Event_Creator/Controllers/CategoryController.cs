@@ -32,11 +32,11 @@ namespace Event_Creator.Controllers
         {
             if (await _appContext.categories.Where(x => x.CategoryId == category.ParentId).FirstOrDefaultAsync() == null && category.ParentId !=0)
             {
-                return BadRequest(Errors.InvalidParentCategory);
+                return BadRequest(new { message = Errors.InvalidParentCategory });
             }
             await _appContext.categories.AddAsync(category);
             await _appContext.SaveChangesAsync();
-            return Ok("دسته بندی افزوده شد");
+            return Ok(new { message = "دسته بندی افزوده شد" });
         }
 
 
@@ -46,11 +46,11 @@ namespace Event_Creator.Controllers
         {
             if(parentId != 0 && await _appContext.categories.Where(x => x.CategoryId==parentId).SingleOrDefaultAsync() == null)
             {
-                return BadRequest(Errors.InvalidCategoryName);
+                return BadRequest(new { message = Errors.InvalidCategoryName });
             }
 
             List<Category> categories = await _appContext.categories.Where(x => x.ParentId == parentId).ToListAsync();
-            return Ok(categories);
+            return Ok(new { categories = categories });
         }
 
     }

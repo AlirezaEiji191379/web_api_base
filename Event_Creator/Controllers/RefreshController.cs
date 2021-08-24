@@ -35,7 +35,7 @@ namespace Event_Creator.Controllers
         {
             AuthResponseMobile authResponse = await _jwtService.RefreshTokenMobile(refreshRequest,HttpContext);
             _antiForgery.GetAndStoreTokens(HttpContext);
-            return StatusCode(authResponse.statusCode,authResponse);
+            return StatusCode(authResponse.statusCode, new { auth = authResponse });
         }
 
         [Route("Web")]
@@ -44,7 +44,8 @@ namespace Event_Creator.Controllers
         {
             AuthResponseWeb authResponse = await _jwtService.RefreshTokenWeb(this.HttpContext);
             _antiForgery.GetAndStoreTokens(HttpContext);
-            return StatusCode(authResponse.statusCode,authResponse);            
+            if (authResponse.statusCode == 200) return Ok();
+            else return StatusCode(authResponse.statusCode, new { auth = authResponse });
         }
 
 

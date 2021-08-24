@@ -43,12 +43,12 @@ namespace Event_Creator.Controllers
 
             if (verification == null)
             {
-                return BadRequest(Errors.NullVerification);
+                return BadRequest(new {message= Errors.NullVerification});
             }
 
             if (verification.usage != Usage.SignUp)
             {
-                return BadRequest(Errors.falseVerificationType);
+                return BadRequest(new{ message= Errors.falseVerificationType});
             }
 
             var now = DateTime.Now;
@@ -57,7 +57,7 @@ namespace Event_Creator.Controllers
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest("you must reSignUp");
+                return BadRequest(new {message= "you must reSignUp"});
             }
 
             User user = null;
@@ -68,7 +68,7 @@ namespace Event_Creator.Controllers
              _appContext.Users.Remove(user);
              _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
-             return BadRequest("you must reSignUp");
+             return BadRequest(new {message= "you must reSignUp"});
             }
 
             if (verification.VerificationCode != code)
@@ -76,7 +76,7 @@ namespace Event_Creator.Controllers
               verification.Requested++;
               _appContext.verifications.Update(verification);
               await _appContext.SaveChangesAsync();
-              return BadRequest("wrong Code");
+              return BadRequest(new{message= "wrong Code"});
             }
 
               user =await _appContext.Users.SingleAsync(a => a.Username == username);
@@ -85,7 +85,7 @@ namespace Event_Creator.Controllers
              _appContext.verifications.Remove(verification);
              await _appContext.SaveChangesAsync();
 
-            return Ok("ok");
+            return Ok(new {message= "your account successfully verified!"});
         }
 
 
@@ -98,12 +98,12 @@ namespace Event_Creator.Controllers
 
             if (verification == null)
             {
-                return BadRequest(Errors.NullVerification);
+                return BadRequest(new { message = Errors.NullVerification });
             }
 
             if (verification.usage != Usage.Login)
             {
-                return BadRequest(Errors.falseVerificationType);
+                return BadRequest(new { message = Errors.falseVerificationType });
             }
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -111,7 +111,7 @@ namespace Event_Creator.Controllers
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.expiredVerification);
+                return BadRequest(new { message = Errors.expiredVerification });
             }
             User user = null;
             if (verification.Requested == 5)
@@ -130,7 +130,7 @@ namespace Event_Creator.Controllers
                 }
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.exceedVerification);
+                return BadRequest(new { message = Errors.exceedVerification });
             }
 
             if (verification.VerificationCode != code)
@@ -138,7 +138,7 @@ namespace Event_Creator.Controllers
                 verification.Requested++;
                 _appContext.verifications.Update(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.failedVerification);
+                return BadRequest(new { message = Errors.failedVerification });
             }
 
             user = await _appContext.Users.SingleAsync(a => a.Username == username);
@@ -179,7 +179,7 @@ namespace Event_Creator.Controllers
                 }
                 );
                 _antiForgery.GetAndStoreTokens(HttpContext);
-                return Ok("ok");
+                return Ok();
             }
             else
             {
@@ -190,7 +190,7 @@ namespace Event_Creator.Controllers
                     JwtAccessToken = jwtAccessToken,
                     statusCode = 200,
                 };
-                return Ok(response);
+                return Ok(new { auth = response });
             }
         }
 
@@ -203,12 +203,12 @@ namespace Event_Creator.Controllers
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.UserId==userId && x.usage== Usage.ChangePassword).SingleOrDefaultAsync();
             if (verification == null)
             {
-                return BadRequest(Errors.NullVerification);
+                return BadRequest(new { message = Errors.NullVerification });
             }
 
             if (verification.usage != Usage.ChangePassword)
             {
-                return BadRequest(Errors.falseVerificationType);
+                return BadRequest(new { message = Errors.falseVerificationType });
             }
             PasswordChange change = null;
             var now = DateTime.Now;
@@ -227,7 +227,7 @@ namespace Event_Creator.Controllers
                 _appContext.verifications.Remove(verification);
                 _appContext.changePassword.Remove(change);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.exceedVerification);
+                return BadRequest(new { message =Errors.exceedVerification});
             }
 
             if (verification.VerificationCode != code)
@@ -235,7 +235,7 @@ namespace Event_Creator.Controllers
                 verification.Requested++;
                 _appContext.verifications.Update(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.failedVerification);
+                return BadRequest(new { message = Errors.failedVerification });
             }
             await _appContext.Entry(verification.User).Collection(x => x.RefreshTokens).LoadAsync();
             List<RefreshToken> allUserTokens = verification.User.RefreshTokens.ToList(); ;
@@ -255,7 +255,7 @@ namespace Event_Creator.Controllers
             change.user.Password = _userService.Hash(change.NewPassword);
             _appContext.Users.Update(change.user);
             await _appContext.SaveChangesAsync();
-            return Ok(Information.SuccessChangePassword);
+            return Ok(new { message = Information.SuccessChangePassword });
         }
 
 
@@ -265,11 +265,11 @@ namespace Event_Creator.Controllers
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Email.Equals(email) && x.usage ==Usage.ResetPassword).SingleOrDefaultAsync();
             if(verification == null)
             {
-                return BadRequest(Errors.NullVerification);
+                return BadRequest(new { message = Errors.NullVerification });
             }
             if (verification.usage != Usage.ResetPassword)
             {
-                return BadRequest(Errors.falseVerificationType);
+                return BadRequest(new { message = Errors.falseVerificationType });
             }
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -277,20 +277,20 @@ namespace Event_Creator.Controllers
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.expiredVerification);
+                return BadRequest(new { message = Errors.expiredVerification });
             }
             if (verification.Requested == 1)
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.exceedVerification);
+                return BadRequest(new { message = Errors.exceedVerification });
             }
             if (verification.VerificationCode != code)
             {
                 verification.Requested++;
                 _appContext.verifications.Update(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.failedVerification);
+                return BadRequest(new { message = Errors.failedVerification });
             }
             byte[] rgb = new byte[9];
             RNGCryptoServiceProvider rngCrypt = new RNGCryptoServiceProvider();
@@ -304,7 +304,7 @@ namespace Event_Creator.Controllers
                 Text = $"رمز عبور جدید شما {newPassword} میباشد. "
             };
             await _userService.sendEmailToUser(verification.User.Email,text,"رمز عبور جدید");
-            return Ok(Information.ResetPassword);
+            return Ok(new { message = Information.ResetPassword });
         }
 
 
@@ -316,12 +316,12 @@ namespace Event_Creator.Controllers
             Verification verification = await  _appContext.verifications.Include(x => x.User).Where(a => a.User.Username == username && a.usage==Usage.SignUp).FirstOrDefaultAsync();
             if (verification == null)
             {
-                return BadRequest(Errors.NullVerification);
+                return BadRequest(new { message = Errors.NullVerification });
             }
 
             if (verification.usage != Usage.SignUp)
             {
-                return BadRequest(Errors.falseVerificationType);
+                return BadRequest(new { message = Errors.falseVerificationType });
             }
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -332,7 +332,7 @@ namespace Event_Creator.Controllers
                 _appContext.verifications.Remove(verification);
                 _appContext.Users.Remove(user);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.exceedVerification);
+                return BadRequest(new { message = Errors.exceedVerification });
             }
 
 
@@ -349,30 +349,30 @@ namespace Event_Creator.Controllers
             };
             await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(verification.User.Email,text, "کد تایید ثبت نام");
-            return Ok(Information.okResendCode);
+            return Ok(new { message = Information.okResendCode });
         }
 
 
         [Route("[action]/{username}")]
         public async Task<IActionResult> ResendCodeLogin(string username)
         {
-            User user = null;
+            //User user = null;
             Verification verification = await _appContext.verifications.Include(x => x.User).Where(x => x.User.Username.Equals(username) && x.usage==Usage.Login).FirstOrDefaultAsync();
             if (verification == null)
             {
-                return BadRequest(Errors.NullVerification);
+                return BadRequest(new { message = Errors.NullVerification });
             }
 
             if (verification.usage != Usage.Login)
             {
-                return BadRequest(Errors.falseVerificationType);
+                return BadRequest(new { message = Errors.falseVerificationType });
             }
 
             if (verification.Resended == true)
             {
                 _appContext.verifications.Remove(verification);
                 await _appContext.SaveChangesAsync();
-                return BadRequest(Errors.exceedLogin);
+                return BadRequest(new { message = Errors.exceedLogin });
             }
             var now = DateTime.Now;
             var unixTimeSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
@@ -390,7 +390,7 @@ namespace Event_Creator.Controllers
             };
             await _appContext.SaveChangesAsync();
             await _userService.sendEmailToUser(verification.User.Email, text, "کد تایید ورود");
-            return Ok(Information.okResendCode);
+            return Ok(new { message = Information.okResendCode });
         }
 
 
