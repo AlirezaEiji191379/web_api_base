@@ -22,12 +22,18 @@ namespace Event_Creator.models
 
         public DbSet<User> Users { get; set; }
         public DbSet<Verification> verifications { get; set; }
+
+
         public DbSet<RefreshToken> refreshTokens { get; set; }
         public DbSet<LockedAccount> lockedAccounts { get; set; }
         public DbSet<FailedLogin> failedLogins { get; set; }
         public DbSet<JwtBlackList> jwtBlackLists { get; set; }
         public DbSet<PasswordChange> changePassword { get; set; }
+        public DbSet<Category> categories { get; set; }
+        public DbSet<Book> books { get; set; }
+        public DbSet<Exchange> exchanges { get; set;}
 
+        public DbSet<Bookmark> bookmarks { get; set; }
            
 
     }

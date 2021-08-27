@@ -52,7 +52,10 @@ namespace Event_Creator.models
             return false;
         }
 
-
+        public bool ShouldSerializebooks()
+        {
+            return false;
+        }
 
         public bool ShouldSerializeRefreshTokens()
         {

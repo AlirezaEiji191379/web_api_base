@@ -6,6 +6,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controllers\BookController.cs" />
+    <Compile Remove="Controllers\CategoryController.cs" />
+    <Compile Remove="Controllers\FileController.cs" />
+    <Compile Remove="data\CategoryConfiguration.cs" />
+    <Compile Remove="models\Book.cs" />
+    <Compile Remove="models\Bookmark.cs" />
+    <Compile Remove="models\Category.cs" />
+    <Compile Remove="models\Exchange.cs" />
+    <Compile Remove="Other\AddExchangeBookRequest.cs" />
+    <Compile Remove="Other\BookBuySellRequest.cs" />
+    <Compile Remove="Other\BookResponse.cs" />
+    <Compile Remove="Other\UpdateBookCategoryRequest.cs" />
+    <Compile Remove="Other\UpdateBookNameRequest.cs" />
+    <Compile Remove="Other\UpdateBookPriceRequest.cs" />
+    <Compile Remove="Other\UpdateExchangeBookNameRequest.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="JsonModelBinder" Version="2.1.1" />
     <PackageReference Include="Kavenegar" Version="1.2.4" />
     <PackageReference Include="MailKit" Version="2.12.0" />
