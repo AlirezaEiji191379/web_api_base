@@ -40,13 +40,8 @@ namespace Event_Creator.models
         [JsonIgnore]
         public Role role { get; set; }
         public ICollection<RefreshToken> RefreshTokens { get; set; } 
-        public ICollection<Book> books { get; set; }
-        public ICollection<Bookmark> bookmarks { get; set; }
 
-        public bool ShouldSerializebookmarks()
-        {
-            return false;
-        }
+
         //public bool ShouldSerializeUserId()
         //{
         //    return false;
@@ -57,10 +52,7 @@ namespace Event_Creator.models
             return false;
         }
 
-        public bool ShouldSerializebooks()
-        {
-            return false;
-        }
+
 
         public bool ShouldSerializeRefreshTokens()
         {

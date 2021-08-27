@@ -27,11 +27,7 @@ namespace Event_Creator.models
         public DbSet<FailedLogin> failedLogins { get; set; }
         public DbSet<JwtBlackList> jwtBlackLists { get; set; }
         public DbSet<PasswordChange> changePassword { get; set; }
-        public DbSet<Category> categories { get; set; }
-        public DbSet<Book> books { get; set; }
-        public DbSet<Exchange> exchanges { get; set;}
 
-        public DbSet<Bookmark> bookmarks { get; set; }
            
 
     }
