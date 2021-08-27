@@ -25,11 +25,12 @@ namespace Event_Creator.Controllers
         private readonly IUserService _userService;
         private readonly IJwtService _jwtService;
         private readonly ICaptchaService _captchaService;
-        public UserController (ApplicationContext applicationContext,IUserService userService,ICaptchaService captchaService)
+        public UserController (ApplicationContext applicationContext,IUserService userService,ICaptchaService captchaService,IJwtService jwt)
         {
             _appContext = applicationContext;
             _userService = userService;
             _captchaService = captchaService;
+            _jwtService = jwt;
         }
         
 
