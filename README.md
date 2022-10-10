@@ -13,10 +13,10 @@ it supports terminating sessions like telegram and security alert emails like go
 
 for creating the tables in database just use migration scrtipts in Visual studio!<br>
 
-contributer : ([@MoTheGoat](https://github.com/mothegoat)) </br>
+contributer :
               ([@AlirezaEiji191379](https://github.com/AlirezaEiji191379))
 
-telegram : @PishroRezaEiji79  @HolyMHD </br>
+telegram : @PishroRezaEiji79  </br>
 
 <h2> How to use Api? </h2>
 each part has example for how to interact with Api!
